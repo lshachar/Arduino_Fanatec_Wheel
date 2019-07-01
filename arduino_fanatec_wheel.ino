@@ -2,14 +2,24 @@
 #include <avr/pgmspace.h>
  
 #define dataLength 33
-#define CS_ISR 2		// currently, connect SPI Cable Select pin to digital pin 2. to be changed.
+#define CS_ISR 2			// currently, connect SPI Cable Select pin to digital pin 2. to be changed.
 #define PRINTBIN(Num) for (uint32_t t = (1UL << (sizeof(Num) * 8) - 1); t; t >>= 1) Serial.write(Num& t ? '1' : '0'); // Prints a binary number with leading zeros (Automatic Handling)
 #define RIGHTPADDLEPIN 8
-#define RIGHTPADDLEBIT 9 // 1st bit of the 2nd button byte
+#define RIGHTPADDLEBIT 9	// 1st bit of the 2nd button byte
+
+
+#define BEEPANDCLICK
+#ifdef BEEPANDCLICK
+#define SPEAKERPIN 5		// must be PWM pin
+#define BEEPLENGTH 170
+#define BEEPINTERVAL 1000
+#endif // BEEPANDCLICK
+
+
 
 uint8_t mosiBuf[dataLength];	// buffer for the incoming data on the mosi line.	
 volatile boolean process_it = false;
-volatile unsigned long lastPrintMillis = 0;
+volatile unsigned long lastBeepMillis = 0, lastPrintMillis = 0;
 int selectedButtonByte = 2;		// button bytes are 3rd to 5th. initialize to 1st relevant byte.
 int countUpDown = 0;
 uint8_t tempincByte, incByte, prevPrintedByte, prevAlphaDisp[3];
@@ -90,7 +100,10 @@ void setup (void)
 	}
 	*/	
 	pinMode(MISO, OUTPUT);
-  pinMode(RIGHTPADDLEPIN, INPUT_PULLUP);
+#ifdef BEEPANDCLICK
+	pinMode(SPEAKERPIN, OUTPUT);
+#endif
+	pinMode(RIGHTPADDLEPIN, INPUT_PULLUP);
 	attachInterrupt(digitalPinToInterrupt(CS_ISR), cableselect, RISING);
 	// SPCR BYTE should be: 11000100   note to self: by raw_capture.ino and fanatec.cpp spi settings, of btClubSportWheel by Darknao, SPI settings are SPI_Mode0 & MSBFIRST. but with logic scope I see that CPHA 1 (falling!) is used by wheel base, which means SPI_MODE1. (and MSBFIRST)
 	// (Mode 1 - clock is normally low (CPOL = 0), and the data is sampled on the transition from high to low (trailing edge) (CPHA = 1))
@@ -128,6 +141,18 @@ void loop(void)
 {
 	readSerial();
   //readButtons();
+
+#ifdef BEEPANDCLICK
+	if (millis() > lastBeepMillis + BEEPINTERVAL) {
+		analogWrite(SPEAKERPIN, 500);
+		returnData[3] ^= 1 ;	// toggles 1st bit of 3rd cell			//returnData[3] |= 1 ;
+		lastBeepMillis = millis();
+
+	} else 
+	if (millis() > lastBeepMillis + BEEPLENGTH) {
+		analogWrite(SPEAKERPIN, 0);
+	}
+#endif
 	if (millis() > lastPrintMillis + delayMillis) {			//process_it && millis
 		//printmosibuf();				//printmisobuf();
 		returnData[selectedButtonByte] += countUpDown;
