@@ -16,7 +16,7 @@
 
 
 uint8_t mosiBuf[dataLength];	// buffer for the incoming data on the mosi line.	
-volatile boolean process_it = false;
+volatile boolean process_it = false, isBufferReady = false;
 volatile unsigned long lastPrintMillis = 0;
 int selectedButtonByte = 2;		// button bytes are 3rd to 5th. initialize to 1st relevant byte.
 int countUpDown = 0;
@@ -62,11 +62,12 @@ PROGMEM const unsigned char _crc8_table[256] = {
 };
 
 
-// Uni hub packet (change to other steering wheels in setup() )
+// default packet
 uint8_t returnData[dataLength] = { 0xA5, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x13, 0xfc };
 
+uint8_t returnDataBuffer[dataLength];	// array to store buttons value (& CRC8) buffered, before loading them into ReturnData and sending out
 
 // return CRC8 from buf
 uint8_t crc8(const uint8_t* buf, uint8_t length) {
@@ -85,9 +86,10 @@ void setup(void)
 
 	//returnData[1] = {0x01}; // uncomment for BMW M3 GT2
 	//returnData[1] = {0x02}; // uncomment for ClubSport FORMULA
-	returnData[1] = { 0x03 }; // uncomment for ClubSport Porshe 918 RSR - This is the only option that I'm fully implementing right now.
-  //returnData[1] = (0x04); // uncomment for Uni hub
+	  returnData[1] = {0x03}; // uncomment for ClubSport Porshe 918 RSR - This is the only option that I'm fully implementing right now.
+	//returnData[1] = (0x04); // uncomment for Uni hub
 
+	copyCArray(returnData, returnDataBuffer, dataLength);
 
 	Serial.begin(115200);
 	/*
@@ -100,10 +102,10 @@ void setup(void)
 	pinMode(MISO, OUTPUT);
 	pinMode(LEDPIN, OUTPUT);
 
-#ifdef HASSHIFTERPADELS
+	#ifdef HASSHIFTERPADELS
 	pinMode(RIGHTPADDLEPIN, INPUT_PULLUP);
 	pinMode(LEFTPADDLEPIN, INPUT_PULLUP);
-#endif
+	#endif
 
 	attachInterrupt(digitalPinToInterrupt(CS_ISR), cableselect, RISING);
 	// SPCR BYTE should be: 11000100   note to self: by raw_capture.ino and fanatec.cpp spi settings, of btClubSportWheel by Darknao, SPI settings are SPI_Mode0 & MSBFIRST. but with logic scope I see that CPHA 1 (falling!) is used by wheel base, which means SPI_MODE1. (and MSBFIRST)
@@ -115,14 +117,31 @@ void setup(void)
 	Serial.println(SPCR, BIN);   //prints byte as binary
 }
 
-void cableselect() {					// When CS line goes high - the wheel should get ready to transmit the next returnData buffer, right from the begining. (so that the first byte (0xA5) will be sent out on the first Clock cycle (and after CS line went Low)
-	SPCR &= ~_BV(SPIE);					// turn OFF interrupts
-	SPDR = returnData[0];				// load first byte into SPDR 'buffer'
-	isrIndex = 0;						// on next SPI interrupt(SPI_STC_vect), load the 2nd byte
 
-	SPCR |= _BV(SPIE);					// turn on interrupts
+void copyCArray(uint8_t* src, uint8_t* dst, int len) {
+	copyCArray(src, dst, len, 0);
+}
+void copyCArray(uint8_t* src, uint8_t* dst, int len, int first) {
+	for (int i = first; i < len+first; i++) {
+		dst[i] = src[i];
+	}
 }
 
+void cableselect() {					// When CS line goes high - the wheel should get ready to transmit the next returnData buffer, right from the begining. (so that the first byte (0xA5) will be sent out on the first Clock cycle (and after CS line went Low)
+	SPCR &= ~_BV(SPIE);					// turn OFF interrupts
+	updateReturnData();
+	SPDR = returnData[0];				// load first byte into SPDR 'buffer'
+	isrIndex = 0;						// on next SPI interrupt(SPI_STC_vect), load the 2nd byte
+		SPCR |= _BV(SPIE);					// turn on interrupts
+}
+
+void updateReturnData() {				// load the current buttons to returnData[] to get sent to the wheelbase
+	if (isBufferReady) {				// do not load the buffer if it's not intact. ie: new buttons were pressed but CRC8 was not recalculated yet.
+		//copyCArray(returnDataBuffer, returnData, dataLength);	// KISS: copy everything from buffer to returndata (although you only need few values)
+		copyCArray(returnDataBuffer, returnData, 3, 2);	// not KISS: copy the 3 bytes for buttons (cells 2 to 4,) 
+		returnData[dataLength - 1] = returnDataBuffer[dataLength - 1];	// copy crc8
+	}
+}
 
 // SPI interrupt routine
 ISR(SPI_STC_vect)
@@ -144,18 +163,19 @@ void loop(void)
 	readButtons();
 	if (millis() > lastPrintMillis + delayMillis) {			//process_it && millis
 		//printmosibuf();				//printmisobuf();
-		returnData[selectedButtonByte] += countUpDown;
+		returnDataBuffer[selectedButtonByte] += countUpDown;
 		if ((incByte == '+') || (incByte == '-')) {
 			countUpDown = 0;
 		}
-		if (prevPrintedByte != returnData[selectedButtonByte]) {
-			PRINTBIN(returnData[selectedButtonByte]);
+		if (prevPrintedByte != returnDataBuffer[selectedButtonByte]) {
+			PRINTBIN(returnDataBuffer[selectedButtonByte]);
 			Serial.print("			");
-			printHex(returnData[selectedButtonByte], 2);
+			printHex(returnDataBuffer[selectedButtonByte], 2);
 			Serial.println();
 		}
-		prevPrintedByte = returnData[selectedButtonByte];
-		returnData[dataLength - 1] = crc8(returnData, dataLength - 1);		// calculate crc8 for outgoing packet
+		prevPrintedByte = returnDataBuffer[selectedButtonByte];
+		returnDataBuffer[dataLength - 1] = crc8(returnDataBuffer, dataLength - 1);		// calculate crc8 for outgoing packet
+		isBufferReady = true;
 
 		{						//crc check for incoming data
 			uint8_t crc = crc8(mosiBuf, dataLength - 1);
@@ -169,27 +189,27 @@ void loop(void)
 	}
 }
 
+void readButton() {
+	bool lastButtonStatus = (returnDataBuffer[3] & 1);
+	if (!digitalRead(RIGHTPADDLEPIN)) {		// ugly temporary way to read a button status!
+		if (lastButtonStatus == 0) {		// check what was last button status in buffer. if different, buffer is not ready to be sent (before crc8 is calculated)							
+			isBufferReady = false;			//Serial.println("button changed");
+		}
+		returnDataBuffer[3] |= 1;			// load button into buffer (after isbufferready test)		//returnDataBuffer[selectedButtonByte] |= (1 << (tempincByte - '1'));	// if button is pressed, raise the bit that was last entered through the serial port
+	}
+	else			// if button is not pressed
+	{
+		if (lastButtonStatus == 1) {
+			isBufferReady = false;			// buffer changed
+		}
+		returnDataBuffer[3] &= ~1;						//returnDataBuffer[selectedButtonByte] &= ~(1 << (tempincByte - '1'));
+	}
+}
+
+
 void readButtons() {
-	if (!digitalRead(RIGHTPADDLEPIN)) {		// ugly temporary way!
-	//returnData[selectedButtonByte] |= (1 << (tempincByte - '1'));	// if button is pressed, raise the bit that was last entered through the serial port
-		returnData[3] |= 1;
-		digitalWrite(LEDPIN, HIGH);
-	}
-	else
-	{
-		//returnData[selectedButtonByte] &= ~(1 << (tempincByte - '1'));
-		returnData[3] &= ~1;
-		digitalWrite(LEDPIN, LOW);
-	}
-	if (!digitalRead(LEFTPADDLEPIN)) {
-		returnData[3] |= (1 << 3);
-	}
-	else
-	{
-		returnData[3] &= ~(1 << 3);
-	}
-
-
+	readButton(); // left paddle
+	//readButton(right paddle); etc
 }
 
 void readSerial() {
@@ -213,15 +233,15 @@ void readSerial() {
 			selectedButtonByte = (incByte - 'A' + 2); 	// first button byte is 3rd in array, or cell no 2 to cell no 4 in array
 			Serial.print("Selected button byte:");
 			Serial.println(selectedButtonByte);
-			PRINTBIN(returnData[selectedButtonByte]);
+			PRINTBIN(returnDataBuffer[selectedButtonByte]);
 			Serial.print("			");
-			printHex(returnData[selectedButtonByte], 2);
+			printHex(returnDataBuffer[selectedButtonByte], 2);
 			Serial.println();
 		}
 
 		if ((incByte >= '1') && (incByte <= '8'))
 		{
-			returnData[selectedButtonByte] ^= (1 << (incByte - '1'));	// toggles bit correcsponding to number read by serial print
+			returnDataBuffer[selectedButtonByte] ^= (1 << (incByte - '1'));	// toggles bit correcsponding to number read by serial print
 			printmisobuf();
 			tempincByte = incByte;
 		}
@@ -307,8 +327,8 @@ void printmosibuf() {
 void printmisobuf() {
 	Serial.print("MISO:");
 	for (int i = 0; i < dataLength; i++) {
-		printHex(returnData[i], 2);
-		//Serial.print(returnData[i], HEX);
+		printHex(returnDataBuffer[i], 2);
+		//Serial.print(returnDataBuffer[i], HEX);
 		Serial.print(" ");
 	}
 	Serial.println();
