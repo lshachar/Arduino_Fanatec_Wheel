@@ -1,6 +1,6 @@
 #include "pins_arduino.h" 
 #include <avr/pgmspace.h>
- 
+
 #define dataLength 33
 #define CS_ISR 2		// currently, connect SPI Cable Select pin to digital pin 2. to be changed.
 #define PRINTBIN(Num) for (uint32_t t = (1UL << (sizeof(Num) * 8) - 1); t; t >>= 1) Serial.write(Num& t ? '1' : '0'); // Prints a binary number with leading zeros (Automatic Handling)
@@ -64,8 +64,8 @@ PROGMEM const unsigned char _crc8_table[256] = {
 
 // Uni hub packet (change to other steering wheels in setup() )
 uint8_t returnData[dataLength] = { 0xA5, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x13, 0xfc };
+				  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x13, 0xfc };
 
 
 // return CRC8 from buf
@@ -79,13 +79,13 @@ uint8_t crc8(const uint8_t* buf, uint8_t length) {
 	return crc;
 }
 
-                                
-void setup (void)
+
+void setup(void)
 {
-  
-  //returnData[1] = {0x01}; // uncomment for BMW M3 GT2
-  //returnData[1] = {0x02}; // uncomment for ClubSport FORMULA
-    returnData[1] = {0x03}; // uncomment for ClubSport Porshe 918 RSR - This is the only option that I'm fully implementing right now.
+
+	//returnData[1] = {0x01}; // uncomment for BMW M3 GT2
+	//returnData[1] = {0x02}; // uncomment for ClubSport FORMULA
+	returnData[1] = { 0x03 }; // uncomment for ClubSport Porshe 918 RSR - This is the only option that I'm fully implementing right now.
   //returnData[1] = (0x04); // uncomment for Uni hub
 
 
@@ -96,14 +96,14 @@ void setup (void)
 		Serial.print(returnData[tmp],HEX);
 		Serial.print(" ");
 	}
-	*/	
+	*/
 	pinMode(MISO, OUTPUT);
 	pinMode(LEDPIN, OUTPUT);
-	
+
 #ifdef HASSHIFTERPADELS
 	pinMode(RIGHTPADDLEPIN, INPUT_PULLUP);
 	pinMode(LEFTPADDLEPIN, INPUT_PULLUP);
-	#endif
+#endif
 
 	attachInterrupt(digitalPinToInterrupt(CS_ISR), cableselect, RISING);
 	// SPCR BYTE should be: 11000100   note to self: by raw_capture.ino and fanatec.cpp spi settings, of btClubSportWheel by Darknao, SPI settings are SPI_Mode0 & MSBFIRST. but with logic scope I see that CPHA 1 (falling!) is used by wheel base, which means SPI_MODE1. (and MSBFIRST)
@@ -151,17 +151,17 @@ void loop(void)
 		if (prevPrintedByte != returnData[selectedButtonByte]) {
 			PRINTBIN(returnData[selectedButtonByte]);
 			Serial.print("			");
-			printHex(returnData[selectedButtonByte],2);
+			printHex(returnData[selectedButtonByte], 2);
 			Serial.println();
 		}
 		prevPrintedByte = returnData[selectedButtonByte];
 		returnData[dataLength - 1] = crc8(returnData, dataLength - 1);		// calculate crc8 for outgoing packet
-		
+
 		{						//crc check for incoming data
 			uint8_t crc = crc8(mosiBuf, dataLength - 1);
 			//Serial.print("calc crc");
 			//Serial.println(crc,HEX);
-			if (crc != mosiBuf[dataLength-1])
+			if (crc != mosiBuf[dataLength - 1])
 				Serial.println("_____________incoming data crc8 mismatch!________");
 		}
 		alphaNumericToSerialPort();
@@ -170,19 +170,19 @@ void loop(void)
 }
 
 void readButtons() {
-    if (!digitalRead(RIGHTPADDLEPIN)) {		// ugly temporary way!
-    //returnData[selectedButtonByte] |= (1 << (tempincByte - '1'));	// if button is pressed, raise the bit that was last entered through the serial port
-    returnData[3] |= 1 ;
-	digitalWrite(LEDPIN, HIGH);
-  }
-  else
-  {
-    //returnData[selectedButtonByte] &= ~(1 << (tempincByte - '1'));
-    returnData[3] &= ~1;
-	digitalWrite(LEDPIN, LOW);
-  }
+	if (!digitalRead(RIGHTPADDLEPIN)) {		// ugly temporary way!
+	//returnData[selectedButtonByte] |= (1 << (tempincByte - '1'));	// if button is pressed, raise the bit that was last entered through the serial port
+		returnData[3] |= 1;
+		digitalWrite(LEDPIN, HIGH);
+	}
+	else
+	{
+		//returnData[selectedButtonByte] &= ~(1 << (tempincByte - '1'));
+		returnData[3] &= ~1;
+		digitalWrite(LEDPIN, LOW);
+	}
 	if (!digitalRead(LEFTPADDLEPIN)) {
-		returnData[3] |= (1 << 3 );
+		returnData[3] |= (1 << 3);
 	}
 	else
 	{
@@ -210,7 +210,7 @@ void readSerial() {
 		if (incByte == 'd')
 			alphaNumericToSerialPort();
 		if ((incByte >= 'A') && (incByte <= 'J')) {		// send a,b,c to choose 1st, 2nd, 3rd button byte
-			selectedButtonByte = (incByte - 'A'+ 2 ); 	// first button byte is 3rd in array, or cell no 2 to cell no 4 in array
+			selectedButtonByte = (incByte - 'A' + 2); 	// first button byte is 3rd in array, or cell no 2 to cell no 4 in array
 			Serial.print("Selected button byte:");
 			Serial.println(selectedButtonByte);
 			PRINTBIN(returnData[selectedButtonByte]);
@@ -223,27 +223,31 @@ void readSerial() {
 		{
 			returnData[selectedButtonByte] ^= (1 << (incByte - '1'));	// toggles bit correcsponding to number read by serial print
 			printmisobuf();
-      tempincByte = incByte;
+			tempincByte = incByte;
 		}
 	}
 }
 
 void printHex(int num, int precision) {
-     char tmp[16];
-     char format[128];
-     sprintf(format, "0x%%.%dX", precision);
-     sprintf(tmp, format, num);
-     Serial.print(tmp);
+	char tmp[16];
+	char format[128];
+	sprintf(format, "0x%%.%dX", precision);
+	sprintf(tmp, format, num);
+	Serial.print(tmp);
 }
 
 void alphaNumericToSerialPort() {
 	// send alphanumeric numbers to serial port
 
 	bool displaychanged = false;
-	for (int i = 2; i <= 4; i++) {					// cells 2 to 4 in miso data is alphanumeric data
-		if (mosiBuf[i] != prevAlphaDisp[i-2])			// don't reprint if already printed
-		{
+	for (int i = 2; i <= 4; i++) {						// cells 2 to 4 in miso data is alphanumeric data
+		if (mosiBuf[i] != prevAlphaDisp[i - 2]) {		// if anything on the display changed, reprint
 			displaychanged = true;
+			break;
+		}
+	}
+	if (displaychanged) {
+		for (int i = 2; i <= 4; i++) {
 			uint8_t p = mosiBuf[i] & 0x7F;				// remove the . (dot) bit
 			switch (p) {
 			case 0x3f:	Serial.print("0"); break;
@@ -272,7 +276,7 @@ void alphaNumericToSerialPort() {
 			case 0x73:	Serial.print("P"); break;
 			case 0x78:	Serial.print("t"); break;
 			case 0x40:	Serial.print("-"); break;
-      case 0x3e: Serial.print("u"); break;
+			case 0x3e:  Serial.print("u"); break;
 			case 0x2A:	Serial.print("*"); break;   // this should really be a floating 'o' (displayed on the top square)
 			default:	printHex(p, 2);	   break;
 			}
@@ -281,10 +285,10 @@ void alphaNumericToSerialPort() {
 			else
 				Serial.print("  ");
 
-			prevAlphaDisp[i-2] = mosiBuf[i];
+			prevAlphaDisp[i - 2] = mosiBuf[i];
 		}
+		Serial.println();
 	}
-	if (displaychanged) Serial.println();
 }
 
 
@@ -292,7 +296,7 @@ void printmosibuf() {
 	Serial.print("MOSI:");
 	for (int i = 0; i < dataLength; i++)
 	{
-		printHex(mosiBuf[i],2);
+		printHex(mosiBuf[i], 2);
 		//Serial.print(mosiBuf[i],HEX);
 		Serial.print(" ");
 
