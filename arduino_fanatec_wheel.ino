@@ -22,6 +22,7 @@ int selectedButtonByte = 2;		// button bytes are 3rd to 5th. initialize to 1st r
 int countUpDown = 0;
 uint8_t tempincByte, incByte, prevPrintedByte, prevAlphaDisp[3];
 volatile uint8_t isrIndex = 0;
+volatile int csCounter = 0, bufferReadCounter = 0;
 unsigned long delayMillis = 400; // wait at least the delay time since last spi communication before printing out whatever came in.
 
 
@@ -119,6 +120,7 @@ void cableselect() {					// When CS line goes high - the wheel should get ready 
 	SPCR &= ~_BV(SPIE);					// turn OFF interrupts
 	SPDR = returnData[0];				// load first byte into SPDR 'buffer'
 	isrIndex = 0;						// on next SPI interrupt(SPI_STC_vect), load the 2nd byte
+	csCounter++;
 
 	SPCR |= _BV(SPIE);					// turn on interrupts
 }
@@ -132,6 +134,7 @@ ISR(SPI_STC_vect)
 	isrIndex++;
 	if (isrIndex >= dataLength) {
 		isrIndex = 0;
+		bufferReadCounter++;
 	}
 	SPDR = returnData[isrIndex];
 	//process_it = true;
@@ -144,6 +147,12 @@ void loop(void)
 	readButtons();
 	if (millis() > lastPrintMillis + delayMillis) {			//process_it && millis
 		//printmosibuf();				//printmisobuf();
+		
+		Serial.print("CS counter:");
+		Serial.print(csCounter);
+		Serial.print("   Buffer Read Counter:");
+		Serial.println(bufferReadCounter);
+
 		returnData[selectedButtonByte] += countUpDown;
 		if ((incByte == '+') || (incByte == '-')) {
 			countUpDown = 0;
