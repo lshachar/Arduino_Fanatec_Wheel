@@ -4,8 +4,16 @@
 #define dataLength 33
 #define CS_ISR 2		// currently, connect SPI Cable Select pin to digital pin 2. to be changed.
 #define PRINTBIN(Num) for (uint32_t t = (1UL << (sizeof(Num) * 8) - 1); t; t >>= 1) Serial.write(Num& t ? '1' : '0'); // Prints a binary number with leading zeros (Automatic Handling)
-#define RIGHTPADDLEPIN 8
-#define RIGHTPADDLEBIT 9 // 1st bit of the 2nd button byte
+#define LEDPIN 13
+
+#define HASSHIFTERPADELS	// comment out if you do not have shifter pedals connected
+#ifdef HASSHIFTERPADELS
+#define RIGHTPADDLEPIN 9
+#define RIGHTPADDLEBIT 9	// 1st bit of the 2nd button byte
+#define LEFTPADDLEPIN 8
+#define LEFTPADDLEBIT 12	// 1st bit of the 2nd button byte
+#endif
+
 
 uint8_t mosiBuf[dataLength];	// buffer for the incoming data on the mosi line.	
 volatile boolean process_it = false;
@@ -90,7 +98,13 @@ void setup (void)
 	}
 	*/	
 	pinMode(MISO, OUTPUT);
-  pinMode(RIGHTPADDLEPIN, INPUT_PULLUP);
+	pinMode(LEDPIN, OUTPUT);
+	
+#ifdef HASSHIFTERPADELS
+	pinMode(RIGHTPADDLEPIN, INPUT_PULLUP);
+	pinMode(LEFTPADDLEPIN, INPUT_PULLUP);
+	#endif
+
 	attachInterrupt(digitalPinToInterrupt(CS_ISR), cableselect, RISING);
 	// SPCR BYTE should be: 11000100   note to self: by raw_capture.ino and fanatec.cpp spi settings, of btClubSportWheel by Darknao, SPI settings are SPI_Mode0 & MSBFIRST. but with logic scope I see that CPHA 1 (falling!) is used by wheel base, which means SPI_MODE1. (and MSBFIRST)
 	// (Mode 1 - clock is normally low (CPOL = 0), and the data is sampled on the transition from high to low (trailing edge) (CPHA = 1))
@@ -127,7 +141,7 @@ ISR(SPI_STC_vect)
 void loop(void)
 {
 	readSerial();
-  //readButtons();
+	readButtons();
 	if (millis() > lastPrintMillis + delayMillis) {			//process_it && millis
 		//printmosibuf();				//printmisobuf();
 		returnData[selectedButtonByte] += countUpDown;
@@ -156,15 +170,26 @@ void loop(void)
 }
 
 void readButtons() {
-    if (!digitalRead(RIGHTPADDLEPIN)) {
-    returnData[selectedButtonByte] |= (1 << (tempincByte - '1'));	// if button is pressed, raise the bit that was last entered through the serial port
-    //returnData[3] |= 1 ; 
+    if (!digitalRead(RIGHTPADDLEPIN)) {		// ugly temporary way!
+    //returnData[selectedButtonByte] |= (1 << (tempincByte - '1'));	// if button is pressed, raise the bit that was last entered through the serial port
+    returnData[3] |= 1 ;
+	digitalWrite(LEDPIN, HIGH);
   }
   else
   {
-    returnData[selectedButtonByte] &= ~(1 << (tempincByte - '1'));
-    //returnData[3] &= ~1;
+    //returnData[selectedButtonByte] &= ~(1 << (tempincByte - '1'));
+    returnData[3] &= ~1;
+	digitalWrite(LEDPIN, LOW);
   }
+	if (!digitalRead(LEFTPADDLEPIN)) {
+		returnData[3] |= (1 << 3 );
+	}
+	else
+	{
+		returnData[3] &= ~(1 << 3);
+	}
+
+
 }
 
 void readSerial() {
