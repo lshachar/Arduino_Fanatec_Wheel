@@ -2,7 +2,7 @@
 #include <avr/pgmspace.h>
 
 #define dataLength 33
-#define CS_ISR 2		// currently, connect SPI Cable Select pin to digital pin 2. to be changed.
+#define CS_ISR 2			// currently, connect SPI Cable Select pin to digital pin 2. to be changed.
 #define PRINTBIN(Num) for (uint32_t t = (1UL << (sizeof(Num) * 8) - 1); t; t >>= 1) Serial.write(Num& t ? '1' : '0'); // Prints a binary number with leading zeros (Automatic Handling)
 #define LEDPIN 13
 
@@ -14,10 +14,16 @@
 #define LEFTPADDLEBIT 12	// 1st bit of the 2nd button byte
 #endif
 
+#define BEEPANDCLICK
+#ifdef BEEPANDCLICK
+#define SPEAKERPIN 5
+#define BEEPLENGTH 170
+#define BEEPINTERVAL 1000
+#endif
 
 uint8_t mosiBuf[dataLength];	// buffer for the incoming data on the mosi line.	
 volatile boolean process_it = false, isBufferReady = false;
-volatile unsigned long lastPrintMillis = 0;
+volatile unsigned long lastBeepMillis = 0, lastPrintMillis = 0;
 int selectedButtonByte = 2;		// button bytes are 3rd to 5th. initialize to 1st relevant byte.
 int countUpDown = 0;
 uint8_t tempincByte, incByte, prevPrintedByte, prevAlphaDisp[3];
@@ -62,7 +68,7 @@ PROGMEM const unsigned char _crc8_table[256] = {
 };
 
 
-// default packet
+// Uni hub packet (change to other steering wheels in setup() )
 uint8_t returnData[dataLength] = { 0xA5, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x13, 0xfc };
@@ -102,10 +108,14 @@ void setup(void)
 	pinMode(MISO, OUTPUT);
 	pinMode(LEDPIN, OUTPUT);
 
-	#ifdef HASSHIFTERPADELS
+#ifdef BEEPANDCLICK
+pinMode(SPEAKERPIN, OUTPUT);
+#endif
+
+#ifdef HASSHIFTERPADELS
 	pinMode(RIGHTPADDLEPIN, INPUT_PULLUP);
 	pinMode(LEFTPADDLEPIN, INPUT_PULLUP);
-	#endif
+#endif
 
 	attachInterrupt(digitalPinToInterrupt(CS_ISR), cableselect, RISING);
 	// SPCR BYTE should be: 11000100   note to self: by raw_capture.ino and fanatec.cpp spi settings, of btClubSportWheel by Darknao, SPI settings are SPI_Mode0 & MSBFIRST. but with logic scope I see that CPHA 1 (falling!) is used by wheel base, which means SPI_MODE1. (and MSBFIRST)
@@ -132,7 +142,8 @@ void cableselect() {					// When CS line goes high - the wheel should get ready 
 	updateReturnData();
 	SPDR = returnData[0];				// load first byte into SPDR 'buffer'
 	isrIndex = 0;						// on next SPI interrupt(SPI_STC_vect), load the 2nd byte
-		SPCR |= _BV(SPIE);					// turn on interrupts
+
+	SPCR |= _BV(SPIE);					// turn on interrupts
 }
 
 void updateReturnData() {				// load the current buttons to returnData[] to get sent to the wheelbase
@@ -160,7 +171,19 @@ ISR(SPI_STC_vect)
 void loop(void)
 {
 	readSerial();
-	readButtons();
+  //readButtons();
+
+#ifdef BEEPANDCLICK
+	if (millis() > lastBeepMillis + BEEPINTERVAL) {
+		analogWrite(SPEAKERPIN, 500);
+		returnDataBuffer[3] ^= 1 ;	// toggles 1st bit of 3rd cell			//returnData[3] |= 1 ;
+		lastBeepMillis = millis();
+
+	} else 
+	if (millis() > lastBeepMillis + BEEPLENGTH) {
+		analogWrite(SPEAKERPIN, 0);
+	}
+#endif
 	if (millis() > lastPrintMillis + delayMillis) {			//process_it && millis
 		//printmosibuf();				//printmisobuf();
 		returnDataBuffer[selectedButtonByte] += countUpDown;
