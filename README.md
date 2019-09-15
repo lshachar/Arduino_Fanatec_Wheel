@@ -14,7 +14,7 @@ Here's a [how to make a male Fanatec SPI connector](Steering%20wheel%20connector
 
 [use this](3d%20Models/fanatec%20adapter%20v1.STL) If you need a simple 3d adapter to attach your physical steering wheel to the wheelbase<br/><br/>
 
-Currently I'm using an Arduino uno. Nano is my next target. However, they output 5V and the SPI communication on the wheelbase
+Code was tested on arduino Uno and Nano, and works fine. However, they both output 5V and the SPI communication on the wheelbase
 is using 3.3V.
 It's best to use a level shifter between the two, so there are no chances of damaging the wheelbase (by connecting the 5V arduino 
 output to a 3.3V wheelbase input)
