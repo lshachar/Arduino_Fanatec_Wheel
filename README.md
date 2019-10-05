@@ -14,15 +14,31 @@ Here's a [how to make a male Fanatec SPI connector](Steering%20wheel%20connector
 
 [use this](3d%20Models/fanatec%20adapter%20v1.STL) If you need a simple 3d adapter to attach your physical steering wheel to the wheelbase<br/><br/>
 
+
+
+### Several options:
+- Use a 5V arduino with a logic level shifter. (recommended, this is what I use. [(here are The schematics)](https://github.com/lshachar/Arduino_Fanatec_Wheel/blob/master/schamtics%20arduino%20nano-level%20shifter-fanatec%20round%20plug.png)
+- Use a 5V arduino **without** a logic shifter (can be risky to your precious wheelbase)
+- Use a 3.3V arduino (I haven't tried it)
+
 Code was tested on arduino Uno and Nano, and works fine. However, they both output 5V and the SPI communication on the wheelbase
 is using 3.3V.
 It's best to use a level shifter between the two, so there are no chances of damaging the wheelbase (by connecting the 5V arduino 
 output to a 3.3V wheelbase input)
 However, since the wheelbase is the master and the steering wheel is the slave - MISO is the only *input* channel on the wheelbase,
-and it is safe to simply use a voltage divider on the MISO line - to go from 5V level to 3.3V. (The arduino should recognize the 3.3V input signals coming from the wheelbase as high, so there's nothing we have to do there).
-Note: If you do end up going this route, make sure you wire everything up properly, and that you never set SPI master on the arduino, or you will subject the wheelbase SPI to 5V. (I did subject the wheelbase SPI to 5V by mistake - and nothing got damaged.)
+and it is safe to simply use a voltage divider on the MISO line - to go from 5V level to 3.3V. (The arduino should recognize the 3.3V input signals coming from the wheelbase as high, so there's nothing we have to do there). <br/>
+- **Note:** If you do end up going this route, make sure you wire everything up properly, and that you never set SPI as master on the arduino, or you will subject the wheelbase SPI to 5V. (I did subject the wheelbase SPI to 5V by mistake - and nothing got damaged.)<br/><br/>
 
-Won't it be easier to just switch to a 3.3V arduino? - Yes, probably, but most 3.3V arduinos run at 8MHZ, (16MHZ for the 5V boards), and I'm not sure if this will become an issue or not once I have everything implemented.
+I recommend using an arduino nano and a logic shifter, as seen in the schematics.
+- **Note:** When you connect the arduino by USB cable to your computer, you are connecting the +5V power supply on your USB socket (your computer PSU), to the +5V power supply of your wheelbase.<br/>
+I've done this, and have not had issues with that, but this should be avoided...<br/>
+One of these supplies will have a slightly higher voltage than the other, and it will push current through the other supply. (similar to connecting two batteries in parallel. The charged battery will try to charge the drained battery.)<br/>
+So, it is better if you disconnected the 4 pin on the round plug from VIN before you connected the arduino to the computer. (as a temporary solution) or better, a permament fix:<br/>
+- Modify your micro USB cable, cut off the 5V wire.<br/>
+- Cut the 5V trace coming from the USB connector on the arduino nano.<br/>
+
+
+Won't it be easier to just switch to a 3.3V arduino? - Yes, probably, but most 3.3V arduinos run at 8MHZ, (16MHZ for the 5V boards), and I'm not sure if this will become an issue or not once I have [the buttons](https://github.com/darknao/btClubSportWheel/issues/12#issuecomment-522373884) implemented.
 
 [There's a lot of info over here](https://github.com/darknao/btClubSportWheel/issues/12)
 
