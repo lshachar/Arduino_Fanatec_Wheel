@@ -1,13 +1,14 @@
 # Arduino_Fanatec_Wheel
 A do-it-yourself steering wheel to Fanatec's wheel base.<br/><br/>
+**26.11.2019 update:** [new schematics and pcb layout.](https://raw.githubusercontent.com/lshachar/Arduino_Fanatec_Wheel/master/Schematics%20%26%20pcb%20layout/how%20it%20looks%20like.png) To be manufactured from a single layer board (bottom layer only). The top can easily be connected with some pieces of wire. (in the 3d screenshot file, the bottom layer is displayed on the top of the board - simply for better visualization.) The traces are extra big since I plan on attempting to fabricate the PCB on a CNC milling machine.<br/>
+
+**This project is donationware; if my work helped you out** [**please buy me a beer!**](https://paypal.me/lshachar?locale.x=en_US)<br/><br/>
   
 This project would never have been possible without the work of Darknao on his [BtClubSportWheel - converting any Fanatec CSW steering wheel to a standalone USB version](https://github.com/darknao/btClubSportWheel) project.
   
 Fanatec's wheelbases won't enable any force feedback, unless you have a Fanatec steering wheel attached to them.
 With this project, you can use an arduino to communicate with the wheelbase over SPI, which will get the wheelbase working.
-buttons also work, but I still have lots of code and schematics to write. and then build. This project is in the works and about to change.
-
-This project is donationware; if my work helped you out [please donate!](https://paypal.me/lshachar?locale.x=en_US)<br/><br/>
+buttons also work, but there is a pesky delay issue for a yet unknown reason.
 
 
 Here's a [how to make a male Fanatec SPI connector](Steering%20wheel%20connector%20-%20howto/Readme.md) (what the steering wheel has)<br/><br/>
@@ -55,4 +56,4 @@ C		(to change bits on the 3rd byte that affects buttons)
 6		(release the menu button)  
 [Watch this If you don't know what I'm talking about](https://www.youtube.com/watch?v=yvhAKxjit8o)  
 
-(Hey - this is pretty awful procedure right now, but at least it's working!)
+(Hey - it's a pretty awful procedure right now, but at least it's working!)

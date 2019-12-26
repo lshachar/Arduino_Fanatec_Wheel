@@ -82,11 +82,10 @@ uint8_t crc8(const uint8_t* buf, uint8_t length) {
 
 void setup(void)
 {
-
+	  returnData[1] = {0x03}; // uncomment for ClubSport Porshe 918 RSR - This is the only option that I'm fully implementing right now.
 	//returnData[1] = {0x01}; // uncomment for BMW M3 GT2
 	//returnData[1] = {0x02}; // uncomment for ClubSport FORMULA
-	returnData[1] = { 0x03 }; // uncomment for ClubSport Porshe 918 RSR - This is the only option that I'm fully implementing right now.
-  //returnData[1] = (0x04); // uncomment for Uni hub
+    //returnData[1] = (0x04); // uncomment for Uni hub
 
 
 	Serial.begin(115200);
@@ -277,7 +276,7 @@ void alphaNumericToSerialPort() {
 			case 0x78:	Serial.print("t"); break;
 			case 0x40:	Serial.print("-"); break;
 			case 0x3e:  Serial.print("u"); break;
-			case 0x2A:	Serial.print("*"); break;   // this should really be a floating 'o' (displayed on the top square)
+			case 0x2A:	Serial.print("*"); break;   // this should really be a floating 'o' (displayed on the top square) but I couldn't find an ascii character for that
 			default:	printHex(p, 2);	   break;
 			}
 			if (mosiBuf[i] & 0x80)							// select only the . (dot) bit
