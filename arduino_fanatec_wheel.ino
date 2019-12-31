@@ -1,6 +1,16 @@
 #include "pins_arduino.h" 
 #include <avr/pgmspace.h>
 
+#define HAS_TM1637_DISPLAY	// comment out if you're not using a TM1637 4 digits 7 segment display
+#ifdef HAS_TM1637_DISPLAY
+#include <TM1637Display.h>
+#define TM_CLKPIN 3
+#define TM_DIOPIN 4
+#define TM_BRIGHTNESS 2		// (0..7), sets the brightness of the display. 0=min, 7=max
+TM1637Display display = TM1637Display(TM_CLKPIN, TM_DIOPIN);
+uint8_t TM_data[] = { 0x00, 0x00, 0x00, 0x00 };
+#endif
+
 #define dataLength 33
 #define CS_ISR 2		// currently, connect SPI Cable Select pin to digital pin 2. to be changed.
 #define PRINTBIN(Num) for (uint32_t t = (1UL << (sizeof(Num) * 8) - 1); t; t >>= 1) Serial.write(Num& t ? '1' : '0'); // Prints a binary number with leading zeros (Automatic Handling)
@@ -102,6 +112,12 @@ void setup(void)
 #ifdef HASSHIFTERPADELS
 	pinMode(RIGHTPADDLEPIN, INPUT_PULLUP);
 	pinMode(LEFTPADDLEPIN, INPUT_PULLUP);
+#endif
+
+
+#ifdef HAS_TM1637_DISPLAY
+	display.clear();
+	display.setBrightness(TM_BRIGHTNESS);
 #endif
 
 	attachInterrupt(digitalPinToInterrupt(CS_ISR), cableselect, RISING);
@@ -287,6 +303,12 @@ void alphaNumericToSerialPort() {
 			prevAlphaDisp[i - 2] = mosiBuf[i];
 		}
 		Serial.println();
+#ifdef HAS_TM1637_DISPLAY
+		for (int i = 2; i <= 4; i++) {
+			TM_data[i-2] = mosiBuf[i];
+		}
+		display.setSegments(TM_data);
+#endif
 	}
 }
 

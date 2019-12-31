@@ -1,5 +1,8 @@
 # Arduino_Fanatec_Wheel
 A do-it-yourself steering wheel to Fanatec's wheel base.<br/><br/>
+**31.12.2019 update:** [added support for a TM1637 module](https://raw.githubusercontent.com/lshachar/Arduino_Fanatec_Wheel/master/Schematics%20%26%20pcb%20layout/TM1637%20display.jpg), a 7 segments 4 digits display (only 3 digits are used). buy the display version that has decimal dots next to each digit! (the version I got is designed to display time, and does not have the 8th segment that is used as a dot ".").<br/>Copy the /libraries/TM1637/ folder to your arduino libraries folder (or install the library in any other way)<br/>
+connect arduino D3 to CLK, and D4 to DIO. display works on 5V.<br/>
+
 **26.11.2019 update:** [new schematics and pcb layout.](https://raw.githubusercontent.com/lshachar/Arduino_Fanatec_Wheel/master/Schematics%20%26%20pcb%20layout/how%20it%20looks%20like.png) To be manufactured from a single layer board (bottom layer only). The top can easily be connected with some pieces of wire. (in the 3d screenshot file, the bottom layer is displayed on the top of the board - simply for better visualization.) The traces are extra big since I plan on attempting to fabricate the PCB on a CNC milling machine.<br/>
 
 **This project is donationware; if my work helped you out** [**please buy me a beer!**](https://paypal.me/lshachar?locale.x=en_US)<br/><br/>
