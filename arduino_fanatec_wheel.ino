@@ -339,7 +339,11 @@ void printmisobuf() {
 
 
 /*
-Clubsport wheel buttons, by bit, from 3rd cell on miso array to 5th cell
+Clubsport wheel buttons, by bit, from 3rd byte on miso array to 5th byte
+User can send a letter ('A','B','C') correlating to 3rd, 4th, or 5th bytes of the data array, in order to turn individual bits in a specific byte on or off.
+after sending a letter, user can send a number (1-8) to switch each individual bit.
+
+A
 1	D-pad Up
 2	D-pad Left
 3	D-pad Right

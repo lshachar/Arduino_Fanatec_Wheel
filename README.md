@@ -14,8 +14,8 @@ With this project, you can use an arduino to communicate with the wheelbase over
 buttons also work, but there is a pesky delay issue for a yet unknown reason.
 
 
-Here's a [how to make a male Fanatec SPI connector](Steering%20wheel%20connector%20-%20howto/Readme.md) (what the steering wheel has)<br/><br/>
-
+Here's a [how to make a male Fanatec SPI connector](Steering%20wheel%20connector%20-%20howto/Readme.md) (what the steering wheel has)<br/>
+Also, [Alevale found where to buy the connector](https://github.com/darknao/btClubSportWheel/issues/14#issuecomment-604973137)<br/><br/>
 [use this](3d%20Models/fanatec%20adapter%20v1.STL) If you need a simple 3d adapter to attach your physical steering wheel to the wheelbase<br/><br/>
 
 
@@ -47,16 +47,17 @@ Won't it be easier to just switch to a 3.3V arduino? - Yes, probably, but most 3
 [There's a lot of info over here](https://github.com/darknao/btClubSportWheel/issues/12)
 
 
-# What to do if you gotta calibrate your wheelbase?
+# What to do if you gotta calibrate your wheelbase center?
+On some wheelbases, you can do that directly from the [Fanatec wheel properties page](https://github.com/lshachar/Arduino_Fanatec_Wheel/issues/7). unfortunately it doesn't work on my CSW V2.5.<br/>
 You can use the current code to calibrate the wheelbase's center point. (This is needed after a firmware upgrade for the wheelbase) the arduino will translate the alphanumeric display to letters and send them out to the Serial monitor(!). you will need to type in some commands on the Serial monitor, which will look pretty cypheric to you.
-Type these characters on the serial monitor, press [return] after every line: <br/><br/>
-C		(to change bits on the 3rd byte that affects buttons)  
+Type these characters on the serial monitor, press [return] after each line: <br/><br/>
+C		(to change bits on the 3rd byte that affects buttons. C=3rd)
 6		(to change (raise) the sixth bit on the 3rd byte, which is the menu button. this will cause the alphanumeric display to turn on and the message '5_1' (equivilent to 'S_1' i.e. 'setting 1') will be printed on the serial monitor.)  
 6		(to release the menu button (lower the 6th bit) )  
 23		(2 will raise the D-pad button bit, 3 will raise the joystick button bit.)  
-23		(to release both buttons)  
+23		(to release both buttons, drop both bits)
 6		(press the menu button again to exit the menu)  
 6		(release the menu button)  
 [Watch this If you don't know what I'm talking about](https://www.youtube.com/watch?v=yvhAKxjit8o)  
 
-(Hey - it's a pretty awful procedure right now, but at least it's working!)
+(Hey - it's not an easy procedure, but at least it works!
