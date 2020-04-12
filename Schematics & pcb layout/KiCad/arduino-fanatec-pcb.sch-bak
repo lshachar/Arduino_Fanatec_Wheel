@@ -561,14 +561,7 @@ F 3 "~" H 4200 2200 50  0001 C CNN
 	0    -1   -1   0   
 $EndComp
 Wire Wire Line
-	3000 3450 3000 3250
-Wire Wire Line
-	3000 3250 6600 3250
-Wire Wire Line
-	6600 3250 6600 4350
-Wire Wire Line
 	6600 4350 6550 4350
-Connection ~ 3000 3450
 Text Notes 2600 4800 0    50   ~ 0
 GND
 Text Notes 2600 4600 0    50   ~ 0

@@ -1,7 +1,7 @@
 #include "pins_arduino.h" 
 #include <avr/pgmspace.h>
 
-//#define HAS_TM1637_DISPLAY	// comment out if you're not using a TM1637 4 digits 7 segment display
+#define HAS_TM1637_DISPLAY	// comment out if you're not using a TM1637 4 digits 7 segment display
 #ifdef  HAS_TM1637_DISPLAY
 #include <TM1637Display.h>
 #define TM_CLKPIN 3
@@ -9,7 +9,9 @@
 #define TM_BRIGHTNESS 2		// (0..7), sets the brightness of the display. 0=min, 7=max
 TM1637Display display = TM1637Display(TM_CLKPIN, TM_DIOPIN);
 uint8_t TM_data[] = { 0x00, 0x00, 0x00, 0x00 };
+const uint8_t TM_race[] = { 0x50, 0x77, 0x58, 0x79 };
 #define DISPLAY_CRC8_ON_ALPHANUMERIC	// if you'd like to get 'CrC' message on the alphanumeric display, each time there's a crc8 mismatch, which means bad SPI communication with wheelbase. (message anyways gets sent to serial monitor.)
+const uint8_t TM_crc[] = {0x39, 0x50, 0x39};
 #endif
 
 #define HAS_ANALOG_DPAD
@@ -20,18 +22,9 @@ uint8_t TM_data[] = { 0x00, 0x00, 0x00, 0x00 };
 int prevDpadVal = 0;
 #endif
 
-
 #define dataLength 33
 #define CS_ISR 2		// currently, connect SPI Cable Select pin to digital pin 2. to be changed.
 #define PRINTBIN(Num) for (uint32_t t = (1UL << (sizeof(Num) * 8) - 1); t; t >>= 1) Serial.write(Num& t ? '1' : '0'); // Prints a binary number with leading zeros (Automatic Handling)
-
-#define HASSHIFTERPADELS	// comment out if you do not have shifter pedals connected
-#ifdef HASSHIFTERPADELS
-#define RIGHTPADDLEPIN 9
-#define RIGHTPADDLEBIT 9	// 1st bit of the 2nd button byte
-#define LEFTPADDLEPIN 8
-#define LEFTPADDLEBIT 12	// 1st bit of the 2nd button byte
-#endif
 
 #define HASBUTTONS
 #ifdef HASBUTTONS
@@ -106,7 +99,7 @@ uint8_t crc8(const uint8_t* buf, uint8_t length) {
 }
 
 
-void setup(void)
+void setup()
 {
 	  returnData[1] = {0x03}; // for ClubSport Porshe 918 RSR - This is the only option that I'm implementing right now.
 				//    {0x01} for BMW M3 GT2, {0x02} for ClubSport FORMULA, (0x04) for Uni hub
@@ -133,8 +126,7 @@ void setup(void)
 #ifdef HAS_TM1637_DISPLAY
 	display.clear();
 	display.setBrightness(TM_BRIGHTNESS);
-	const uint8_t race[] = {0x50, 0x77, 0x58, 0x79};	// rAcE
-	display.setSegments(race);
+	display.setSegments(TM_race);
 	delay(1000);
 	display.clear();
 #endif
@@ -149,7 +141,7 @@ void setup(void)
 	Serial.println(SPCR, BIN);   //prints byte as binary
 
 
-	pinMode(MISO, OUTPUT);   // todo: to be removed!!!! https://www.reddit.com/r/arduino/comments/2m7b7q/is_it_necessary_to_use_pinmode_on_the_mosimiso/
+	pinMode(MISO, OUTPUT);		// usually when using SPI, arduino will automatically define MISO as output, but not when doing SPI slave.
 }
 
 void cableselect() {					// When CS line goes high - the rim should get ready to transmit the next returnData buffer, right from the begining. (so that the first byte (0xA5) will be sent out on the first Clock cycle (and after CS line went Low)
@@ -176,17 +168,12 @@ ISR(SPI_STC_vect)
 }
 
 
-void loop(void)
-{
+void loop() {
 	readSerial();
 	readButtons();
-	if (millis() > lastPrintMillis + delayMillis) {			//process_it && millis
-	
-		//printmosibuf();				//printmisobuf();
-		returnData[selectedButtonByte] += countUpDown;
-		if ((incByte == '+') || (incByte == '-')) {
-			countUpDown = 0;
-		}
+	calcOutgoingCrc();
+
+	if (millis() > lastPrintMillis + delayMillis) {
 		if (prevPrintedByte != returnData[selectedButtonByte]) {
 			PRINTBIN(returnData[selectedButtonByte]);
 			Serial.print("			");
@@ -194,21 +181,16 @@ void loop(void)
 			Serial.println();
 		}
 		prevPrintedByte = returnData[selectedButtonByte];
-		returnData[dataLength - 1] = crc8(returnData, dataLength - 1);		// calculate crc8 for outgoing packet
-
-		{						//crc check for incoming data
-			uint8_t crc = crc8(mosiBuf, dataLength - 1);
-			//Serial.print("calc crc");
-			//Serial.println(crc,HEX);
-			if (crc != mosiBuf[dataLength - 1])
-				Serial.println("_____________incoming data crc8 mismatch!________");
-		}
+		
+		checkIncomingCrc();
 		alphaNumericToSerialPort();
 		lastPrintMillis = millis();
 	}
 }
 
 void readButtons() {
+
+	/*
 	if (!digitalRead(RIGHTPADDLEPIN)) {		// ugly temporary way!
 	//returnData[selectedButtonByte] |= (1 << (tempincByte - '1'));	// if button is pressed, raise the bit that was last entered through the serial port
 		returnData[3] |= 1;
@@ -224,7 +206,9 @@ void readButtons() {
 	else
 	{
 		returnData[3] &= ~(1 << 3);
+		
 	}
+	*/
 
 #ifdef HAS_ANALOG_DPAD
 /*
@@ -326,7 +310,8 @@ void readButtons() {
 
 }
 
-void readSerial() {
+void readSerial() 
+{
 	// read user inputs from serial connection
 	if (Serial.available() > 0) {
 		incByte = Serial.read();
@@ -335,12 +320,6 @@ void readSerial() {
 			printmosibuf();
 		if (incByte == 'o')
 			printmisobuf();
-		if (incByte == 's')
-			countUpDown = 0;
-		if ((incByte == 'f') || (incByte == '+'))
-			countUpDown = 1;
-		if ((incByte == 'b') || (incByte == '-'))
-			countUpDown = -1;
 		if (incByte == 'd')
 			alphaNumericToSerialPort();
 		if ((incByte >= 'A') && (incByte <= 'J')) {		// send A,B,C to choose 1st, 2nd, 3rd button byte
@@ -453,6 +432,20 @@ void printmisobuf() {
 	Serial.println();
 }
 
+void calcOutgoingCrc() {
+	returnData[dataLength - 1] = crc8(returnData, dataLength - 1);		// calculate crc8 for outgoing packet
+}
+
+void checkIncomingCrc() {		//crc check for incoming data
+	uint8_t crc = crc8(mosiBuf, dataLength - 1);		//Serial.print("calc crc");			//Serial.println(crc,HEX);
+	if (crc != mosiBuf[dataLength - 1]) {
+		Serial.println("_____________incoming data crc8 mismatch!________");
+		printmosibuf();
+#ifdef DISPLAY_CRC8_ON_ALPHANUMERIC
+		display.setSegments(TM_crc);
+#endif			
+	}
+}
 
 
 

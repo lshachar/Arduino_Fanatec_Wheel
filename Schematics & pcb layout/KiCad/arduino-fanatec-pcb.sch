@@ -445,10 +445,6 @@ Wire Wire Line
 Wire Wire Line
 	7000 4600 7150 4600
 Connection ~ 4750 2200
-Wire Wire Line
-	3900 5350 4100 5350
-Connection ~ 3900 5350
-Connection ~ 4100 5350
 Text Label 6550 4550 0    50   ~ 0
 Dpad
 $Comp
