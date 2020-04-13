@@ -43,7 +43,6 @@ int countUpDown = 0;
 uint8_t tempincByte, incByte, prevPrintedByte, prevAlphaDisp[3];
 volatile uint8_t isrIndex = 0;
 unsigned long delayMillis = 400; // wait at least the delay time since last spi communication before printing out whatever came in.
-volatile unsigned long lastButtonsMillis = 0;
 
 // CRC lookup table with polynomial of 0x131
 PROGMEM const unsigned char _crc8_table[256] = {
@@ -187,51 +186,16 @@ void loop() {
 
 void readButtons() {
 #ifdef HASBUTTONS
-	if (millis() > lastButtonsMillis + delayMillis) {
 		for (int i = 0; i < buttonsnum; i++) {
-			if (!digitalRead(buttonsPins[i])) {		// if this input is low (button's pressed)
-				returnData[2+ ((buttonsBits[i]-1) / 8)] |= (1 << (((buttonsBits[i]-1) % 8) ));	// raise  the correct button bit, as defined in buttonsBits
-				
-				Serial.print("i:");
-				Serial.print(i);
-				Serial.print(" buttonsBits:");
-				Serial.print(buttonsBits[i]);
-				Serial.print(" returndata:");
-				Serial.println((2 + ((buttonsBits[i]-1) / 8)));
-				PRINTBIN(1 << (((buttonsBits[i]-1) % 8)));
-				Serial.println();
-				printmisobuf();
+			if (!digitalRead(buttonsPins[i])) {		// if this input is low (button is pressed, all buttons use input pullup and ground connection)
+				returnData[2+ ((buttonsBits[i]-1) / 8)] |= (1 << (((buttonsBits[i]-1) % 8) ));	// raise  the correct button bit, as defined in buttonsBits[]
 			}
 			else {
 				returnData[2 + ((buttonsBits[i]-1) / 8)] &= ~(1 << (((buttonsBits[i]-1) % 8) ));	// drop bit
 			}
 		}
-		lastButtonsMillis = millis();
-
-	}
 #endif
-
-			//returnData[selectedButtonByte] ^= (1 << (incByte - '1'));
-
-	/*
-	if (!digitalRead(RIGHTPADDLEPIN)) {		// ugly temporary way!
-	//returnData[selectedButtonByte] |= (1 << (tempincByte - '1'));	// if button is pressed, raise the bit that was last entered through the serial port
-		returnData[3] |= 1;
-	}
-	else
-	{
-		//returnData[selectedButtonByte] &= ~(1 << (tempincByte - '1'));
-		returnData[3] &= ~1;
-	}
-	if (!digitalRead(LEFTPADDLEPIN)) {
-		returnData[3] |= (1 << 3);
-	}
-	else
-	{
-		returnData[3] &= ~(1 << 3);
-		
-	}
-	*/
+/
 
 #ifdef HAS_ANALOG_DPAD
 /*
