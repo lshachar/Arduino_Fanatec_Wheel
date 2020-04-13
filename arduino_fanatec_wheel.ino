@@ -26,11 +26,12 @@ int prevDpadVal = 0;
 #define CS_ISR 2		// currently, connect SPI Cable Select pin to digital pin 2. to be changed.
 #define PRINTBIN(Num) for (uint32_t t = (1UL << (sizeof(Num) * 8) - 1); t; t >>= 1) Serial.write(Num& t ? '1' : '0'); // Prints a binary number with leading zeros (Automatic Handling)
 
-#define HASBUTTONS
+#define HASBUTTONS	// use digital and analog pins for steering wheel buttons. Note: Pins A7 and A6 do not have an internal pullup resistor. Serial data pins: D0, D1. SPI pins: D2, D10, D11, D12, D13. Display Pins: D3, D4. The rest of digital or analog pins can be used for buttons. (A6 and A7 can only be used for analogRead()  )
 #ifdef HASBUTTONS
-#define buttonsnum 6									// how many buttons are you using?
-uint8_t buttonsPins[] = { A7, A6, A5, A4, A3, A2 };		// what arduino pins are you using
-uint8_t buttonsBits[] = { 9 , 12,  5,  6,  7,  8 };		// what bits do you want each button to affect
+#define buttonsnum 6								// how many buttons are you using?
+uint8_t buttonsPins[] = { A5, A4, A3, A2, 8,  9};		// what arduino pins are you using? 
+uint8_t buttonsBits[] = { 8,  5,  13, 11, 9, 12};		// what bits do you want each button to affect. use last comment in this file as reference.
+
 #endif
 
 uint8_t mosiBuf[dataLength];	// buffer for the incoming data on the mosi line.	
@@ -42,7 +43,7 @@ int countUpDown = 0;
 uint8_t tempincByte, incByte, prevPrintedByte, prevAlphaDisp[3];
 volatile uint8_t isrIndex = 0;
 unsigned long delayMillis = 400; // wait at least the delay time since last spi communication before printing out whatever came in.
-
+volatile unsigned long lastButtonsMillis = 0;
 
 // CRC lookup table with polynomial of 0x131
 PROGMEM const unsigned char _crc8_table[256] = {
@@ -82,9 +83,9 @@ PROGMEM const unsigned char _crc8_table[256] = {
 
 
 // Uni hub packet (change to other steering wheels in setup() )
-uint8_t returnData[dataLength] = { 0xA5, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+uint8_t returnData[dataLength] = { 0xA5, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x13, 0xfc };
+				  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfc };
 
 
 // return CRC8 from buf
@@ -107,24 +108,16 @@ void setup()
 	pinMode(CS_ISR, INPUT);		// SS pin (d10) is not used because I needed to use an interruptable pin  
 	pinMode(SS, INPUT);			// Attempt: maybe if I'm lucky, the SS pin is somehow coded to not let SPI recieve data if SS doesn't drop. (which can solve the bug I'm having with SPI bits being pushed a couple of places. I'm simply going to connect pin 2 and SS 10 ) YESSSSSSS WAY TO GO MAN!!!!
 
-	
+#ifdef HASBUTTONS
+	for (int i = 0; i < buttonsnum; i++) {
+		pinMode(buttonsPins[i], INPUT_PULLUP);
+	}
+
+#endif
+
 	returnData[1] = {0x03}; // for ClubSport Porshe 918 RSR - This is the only option that I'm implementing right now.
 				//    {0x01} for BMW M3 GT2, {0x02} for ClubSport FORMULA, (0x04) for Uni hub
-
-	//delay(1000);											// hit-or miss issue? https://github.com/lshachar/Arduino_Fanatec_Wheel/issues/8
 	Serial.begin(250000);
-	/*
-	for (byte tmp = 0; tmp < dataLength ; tmp++) {			// for debugging: this loop changes the returnData to be from ascii A onwards.
-		returnData[tmp] = (uint8_t)(tmp + "A");				// 65 = "A" in ascii
-		Serial.print(returnData[tmp],HEX);
-		Serial.print(" ");
-	}
-	*/
-
-#ifdef HASSHIFTERPADELS
-	pinMode(RIGHTPADDLEPIN, INPUT_PULLUP);
-	pinMode(LEFTPADDLEPIN, INPUT_PULLUP);
-#endif
 
 #ifdef HAS_ANALOG_DPAD
   pinMode(DPADPIN, INPUT);
@@ -193,6 +186,32 @@ void loop() {
 }
 
 void readButtons() {
+#ifdef HASBUTTONS
+	if (millis() > lastButtonsMillis + delayMillis) {
+		for (int i = 0; i < buttonsnum; i++) {
+			if (!digitalRead(buttonsPins[i])) {		// if this input is low (button's pressed)
+				returnData[2+ ((buttonsBits[i]-1) / 8)] |= (1 << (((buttonsBits[i]-1) % 8) ));	// raise  the correct button bit, as defined in buttonsBits
+				
+				Serial.print("i:");
+				Serial.print(i);
+				Serial.print(" buttonsBits:");
+				Serial.print(buttonsBits[i]);
+				Serial.print(" returndata:");
+				Serial.println((2 + ((buttonsBits[i]-1) / 8)));
+				PRINTBIN(1 << (((buttonsBits[i]-1) % 8)));
+				Serial.println();
+				printmisobuf();
+			}
+			else {
+				returnData[2 + ((buttonsBits[i]-1) / 8)] &= ~(1 << (((buttonsBits[i]-1) % 8) ));	// drop bit
+			}
+		}
+		lastButtonsMillis = millis();
+
+	}
+#endif
+
+			//returnData[selectedButtonByte] ^= (1 << (incByte - '1'));
 
 	/*
 	if (!digitalRead(RIGHTPADDLEPIN)) {		// ugly temporary way!
@@ -242,6 +261,7 @@ void readButtons() {
 
 
 	if (DpadVal != prevDpadVal) {		// only if button has changed, do something
+		Serial.print("Dpad button:");
 		Serial.println(DpadVal);
 		
 
@@ -280,8 +300,7 @@ void readButtons() {
 		case 6: // up+down (menu)
 			returnData[4] &= ~(1 << 5); break;
 		case 7: // Dpad button
-			//returnData[4] &= ~(1 << 1); break;
-			returnData[3] &= ~2; break;	// right paddle
+			returnData[4] &= ~(1 << 1); break;
 		
 		}
 
@@ -300,8 +319,7 @@ void readButtons() {
 		case 6: // up+down (menu)
 			returnData[4] |= (1 << 5); break;
 		case 7: // Dpad button
-			//returnData[4] |= (1 << 1); break;
-			returnData[3] |= 2; break;	// right paddle
+			returnData[4] |= (1 << 1); break;
 
 		}
 		/*
@@ -458,31 +476,31 @@ void checkIncomingCrc() {		//crc check for incoming data
 
 
 /*
-Clubsport wheel buttons, by bit, from 3rd cell on miso array to 5th cell
+Clubsport wheel buttons, by bit, from 3rd byte on miso array to 5th byte
 1	D-pad Up
 2	D-pad Left
 3	D-pad Right
 4	D-pad Down
-5	Button 11
-6	Button 3
-7	Button 6
-8	Button 4
+5	Button 2 (buttom right, lower)
+6	Button 1 (top right, left one)
+7	Button 3 (buttom right, higer)
+8	Button 4 (top right, right one)
 B
-9(1)	Right Paddle
-10(2)	button 2
-11(3)	button 8
-12(4)	left paddle
-13(5)	button 1
-14(6)	button 5
-15(7)	button 9
-16(8)	button 10 (START)
+9(1)	Right Paddle (5 in contentmanager)
+10(2)	button 7  (top left, right one)
+11(3)	button 11 (buttom left, lower)
+12(4)	left paddle  (6 in contentmanager)
+13(5)	button 8  (top left, left one)
+14(6)	button 12 (buttom left, higher)
+15(7)	button 9  (3 buttons in triangle, left)
+16(8)	button 10 (3 buttons in triangle, right)
 C
-17(1)	button 21 through contentmanager. does not show up in fanatec's driver
-18(2)	D-pad Button
-19(3)	Joystick Button
-20(4)	Button 7
-21(5)	button 27 through contentmanager. does not show up in fanatec's driver
-22(6)	Menu button. (button 28 through contentmanager. does not show up in fanatec's driver)
+17(1)	button 21 in contentmanager. does not show up in fanatec's driver
+18(2)	D-pad Button    (25 in contentmanager)
+19(3)	Joystick Button (26 in contentmanager)
+20(4)	Button 22       (3 buttons in triangle, top)
+21(5)	button 27 in contentmanager. does not show up in fanatec's driver
+22(6)	Menu button. (button 28 in contentmanager. does not show up in fanatec's driver)
 23(7)
 24(8)
 
