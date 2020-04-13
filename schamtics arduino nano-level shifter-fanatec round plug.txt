@@ -1,0 +1,6 @@
+bit 1 (osciloscope) goes high when the SPI routine got called. arduino takes 4 us to do digitalwrite, so the green arrow shows where a new byte is actually starting to be read. from there (one clock after), bit 7 clock + bit 5 MOSI, which gets read on falling edge of clock: yellow dots, 
+10010100 = 0x4A.
+which is the 2nd byte that got read into the MOSI buffer on the arduino.
+the first byte is 0xFB = 11111011
+1111 makes some sence, because MOSI stays High when not saying anything,
+B makes no sense. I could understand if it finished with '10' (green dots) but I don't understand why it is finished with '11'

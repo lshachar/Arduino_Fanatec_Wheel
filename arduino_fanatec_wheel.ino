@@ -15,7 +15,7 @@ const uint8_t TM_crc[] = {0x39, 0x50, 0x39};
 #endif
 
 #define HAS_ANALOG_DPAD
-#define DEBUG_ANALOG_DPAD	// print the DPAD value on the alphanumeric display. only relevant if you have an analog dpad and a display.
+//#define DEBUG_ANALOG_DPAD	// print the DPAD value on the alphanumeric display. only relevant if you have an analog dpad and a display.
 
 #ifdef  HAS_ANALOG_DPAD
 #define DPADPIN A0
@@ -101,7 +101,17 @@ uint8_t crc8(const uint8_t* buf, uint8_t length) {
 
 void setup()
 {
-	  returnData[1] = {0x03}; // for ClubSport Porshe 918 RSR - This is the only option that I'm implementing right now.
+	pinMode(MISO, OUTPUT);		// usually when using SPI, arduino will automatically define MISO as output, but not when doing SPI slave.
+	pinMode(SCK, INPUT);
+	pinMode(MOSI, INPUT);
+	pinMode(CS_ISR, INPUT);		// SS pin (d10) is not used because I needed to use an interruptable pin  
+	pinMode(SS, INPUT);			// Attempt: maybe if I'm lucky, the SS pin is somehow coded to not let SPI recieve data if SS doesn't drop. (which can solve the bug I'm having with SPI bits being pushed a couple of places. I'm simply going to connect pin 2 and SS 10 ) YESSSSSSS WAY TO GO MAN!!!!
+
+	pinMode(9, OUTPUT);			// I will toggle this pin to measure the interrupt routine time with the oscilloscope.
+	pinMode(8, OUTPUT);			// I will toggle this pin when the SPI routine is runnig.
+	digitalWrite(9, LOW);
+	
+	returnData[1] = {0x03}; // for ClubSport Porshe 918 RSR - This is the only option that I'm implementing right now.
 				//    {0x01} for BMW M3 GT2, {0x02} for ClubSport FORMULA, (0x04) for Uni hub
 
 	//delay(1000);											// hit-or miss issue? https://github.com/lshachar/Arduino_Fanatec_Wheel/issues/8
@@ -141,22 +151,24 @@ void setup()
 	Serial.println(SPCR, BIN);   //prints byte as binary
 
 
-	pinMode(MISO, OUTPUT);		// usually when using SPI, arduino will automatically define MISO as output, but not when doing SPI slave.
 }
 
 void cableselect() {					// When CS line goes high - the rim should get ready to transmit the next returnData buffer, right from the begining. (so that the first byte (0xA5) will be sent out on the first Clock cycle (and after CS line went Low)
+	digitalWrite(9, HIGH);
 	SPCR &= ~_BV(SPIE);					// turn OFF interrupts
 	//CSTest = true;
 	SPDR = returnData[0];				// load first byte into SPDR single-byte's buffer
 	isrIndex = 0;						// on next SPI interrupt(SPI_STC_vect), load the 2nd byte
-
 	SPCR |= _BV(SPIE);					// turn on interrupts
+	digitalWrite(9, LOW);
 }
 
 
 // SPI interrupt routine
-ISR(SPI_STC_vect)
+ISR(SPI_STC_vect)				// Note: this routine takes 6 us, and happens once 8 bits are recieved.
 {
+	//digitalWrite(8, HIGH);
+	
 	byte c = SPDR;
 	mosiBuf[isrIndex] = c;
 	isrIndex++;
@@ -164,7 +176,7 @@ ISR(SPI_STC_vect)
 		isrIndex = 0;
 	}
 	SPDR = returnData[isrIndex];
-	//process_it = true;
+	//digitalWrite(8, LOW);
 }
 
 
@@ -445,6 +457,10 @@ void checkIncomingCrc() {		//crc check for incoming data
 		display.setSegments(TM_crc);
 #endif			
 	}
+	//else { 
+	//	Serial.println("crc ok!");
+	//	printmosibuf();
+	//}
 }
 
 
