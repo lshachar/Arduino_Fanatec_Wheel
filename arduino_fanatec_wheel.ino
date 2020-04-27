@@ -30,13 +30,12 @@ int prevDpadVal = 0;
 #define buttonsnum 6									// how many buttons are you using?
 uint8_t buttonsPins[] = { A5, A4, A3, A2, 8,  9};		// what arduino pins are you using? 
 uint8_t buttonsBits[] = { 8,  5,  13, 11, 9, 12};		// what bits do you want each button to affect? use last comment in this file as reference.
-
 #endif
 
 uint8_t mosiBuf[dataLength];	// buffer for the incoming data on the mosi line.	
 volatile unsigned long lastPrintMillis = 0;
 int selectedButtonByte = 2;		// button bytes are 3rd to 5th. initialize to 1st relevant byte.
-uint8_t tempincByte, incByte, prevPrintedByte, prevAlphaDisp[3];
+uint8_t incByte, prevPrintedByte, prevAlphaDisp[3];
 volatile uint8_t isrIndex = 0;
 unsigned long delayMillis = 400; // wait at least the delay time since last spi communication before printing out whatever came in.
 
@@ -76,12 +75,10 @@ PROGMEM const unsigned char _crc8_table[256] = {
   182, 232, 10, 84, 215, 137, 107, 53
 };
 
-
 // Uni hub packet (change to other steering wheels in setup() )
 uint8_t returnData[dataLength] = { 0xA5, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 				  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xfc };
-
 
 // return CRC8 from buf
 uint8_t crc8(const uint8_t* buf, uint8_t length) {
@@ -100,14 +97,13 @@ void setup()
 	pinMode(MISO, OUTPUT);		// usually when using SPI, arduino will automatically define MISO as output, but not when doing SPI slave.
 	pinMode(SCK, INPUT);
 	pinMode(MOSI, INPUT);
-	pinMode(CS_ISR, INPUT);		// SS pin (d10) is not used because I needed to use an interruptable pin  
-	pinMode(SS, INPUT);			// Attempt: maybe if I'm lucky, the SS pin is somehow coded to not let SPI recieve data if SS doesn't drop. (which can solve the bug I'm having with SPI bits being pushed a couple of places. I'm simply going to connect pin 2 and SS 10 ) YESSSSSSS WAY TO GO MAN!!!!
+	pinMode(CS_ISR, INPUT);		// connecting CS_ISR pin (D2) to the SS pin (D10) is crucial. See the schematics.
+	pinMode(SS, INPUT);			
 
 #ifdef HASBUTTONS
 	for (int i = 0; i < buttonsnum; i++) {
 		pinMode(buttonsPins[i], INPUT_PULLUP);
 	}
-
 #endif
 
 	returnData[1] = {0x03}; // for ClubSport Porshe 918 RSR - This is the only option that I'm implementing right now.
@@ -134,8 +130,6 @@ void setup()
 	SPCR |= _BV(CPHA);		//turns on CPHA. as I found the CSW wheelbase to use it, with logic scope.
 	Serial.print("SPCR byte (binary):");
 	Serial.println(SPCR, BIN);   //prints byte as binary
-
-
 }
 
 void cableselect() {					// When CS line goes high - the rim should get ready to transmit the next returnData buffer, right from the begining. (so that the first byte (0xA5) will be sent out on the first Clock cycle (and after CS line went Low)
@@ -145,9 +139,8 @@ void cableselect() {					// When CS line goes high - the rim should get ready to
 	SPCR |= _BV(SPIE);					// turn on interrupts
 }
 
-
 // SPI interrupt routine
-ISR(SPI_STC_vect)				// Note: this routine takes 6 us, and happens once 8 bits are recieved.
+ISR(SPI_STC_vect)				// Note: this routine takes 6 us, and happens once 8 bits are recieved through SPI.
 {	
 	byte c = SPDR;
 	mosiBuf[isrIndex] = c;
@@ -158,25 +151,13 @@ ISR(SPI_STC_vect)				// Note: this routine takes 6 us, and happens once 8 bits a
 	SPDR = returnData[isrIndex];
 }
 
-
 void loop() {
 	readSerial();
 	readButtons();
 	calcOutgoingCrc();
-
-	if (millis() > lastPrintMillis + delayMillis) {
-		if (prevPrintedByte != returnData[selectedButtonByte]) {
-			PRINTBIN(returnData[selectedButtonByte]);
-			Serial.print("			");
-			printHex(returnData[selectedButtonByte], 2);
-			Serial.println();
-		}
-		prevPrintedByte = returnData[selectedButtonByte];
-		
-		checkIncomingCrc();
-		alphaNumericToSerialPort();
-		lastPrintMillis = millis();
-	}
+	printButtonByteToSerial();
+	checkIncomingCrc();
+	refreshAlphanumericDisplays();
 }
 
 void readButtons() {
@@ -263,8 +244,8 @@ void buttonBitChange(uint8_t buttonBit, bool bitOn) {
 }
 
 void readSerial()
+// reads user inputs from serial connection. i = print mosI data, o = print misO data, a = view what is displayed on the rim's alphanumeric display. letters (A,B,C) = selects corresponding button byte (first second or third), numbers (1..7) = changes bits inside the selected byte. So user can send button presses to the wheelbase without having any physical buttons attached.
 {
-	// read user inputs from serial connection. i = print mosI data, o = print misO data, a = view what is displayed on the rim's alphanumeric display. letters (A,B,C) selects corresponding button byte (first second or third), numbers (1..7) changes bits inside the selected byte. So user can send button presses to the wheelbase without having any physical button attached.
 	if (Serial.available() > 0) {
 		incByte = Serial.read();
 		Serial.println((char)incByte);
@@ -273,7 +254,7 @@ void readSerial()
 		if (incByte == 'o')
 			printmisobuf();
 		if (incByte == 'd')
-			alphaNumericToSerialPort();
+			refreshAlphanumericDisplays();
 		if ((incByte >= 'A') && (incByte <= 'J')) {		// send A,B,C to choose 1st, 2nd, 3rd button byte
 			selectedButtonByte = (incByte - 'A' + 2); 	// first button byte is 3rd in array, or cell no 2 to cell no 4 in array
 			Serial.print("Selected button byte:");
@@ -287,7 +268,6 @@ void readSerial()
 		{
 			returnData[selectedButtonByte] ^= (1 << (incByte - '1'));	// toggles bit correcsponding to number read by serial print
 			printmisobuf();
-			tempincByte = incByte;
 		}
 	}
 }
@@ -300,8 +280,8 @@ void printHex(int num, int precision) {
 	Serial.print(tmp);
 }
 
-void alphaNumericToSerialPort() {
-	// send alphanumeric numbers to serial port
+void refreshAlphanumericDisplays() {
+	// display current alphanumeric information through serial port / TM1637 display
 	bool displaychanged = false;
 	for (int i = 2; i <= 4; i++) {						// cells 2 to 4 in miso data is alphanumeric data
 		if (mosiBuf[i] != prevAlphaDisp[i - 2]) {		// if anything on the display changed, reprint
@@ -360,6 +340,19 @@ void alphaNumericToSerialPort() {
 	}
 }
 
+void printButtonByteToSerial() {
+// Prints the selected button byte to Serial, if it was changed. The button byte can be selected by sending either A,B or C through the serial monitor. The bits in the selected button byte can either be changed by the serial monitor (sending 1 to 7 raises / lowers a specific bit,) or by pressing one of the physical buttons, if you have any attached.
+	if (millis() > lastPrintMillis + delayMillis) {
+		if (prevPrintedByte != returnData[selectedButtonByte]) {
+			PRINTBIN(returnData[selectedButtonByte]);
+			Serial.print("			");
+			printHex(returnData[selectedButtonByte], 2);
+			Serial.println();
+		}
+		prevPrintedByte = returnData[selectedButtonByte];
+		lastPrintMillis = millis();
+	}
+}
 
 void printmosibuf() {
 	Serial.print("MOSI:");
@@ -384,7 +377,7 @@ void printmisobuf() {
 }
 
 void calcOutgoingCrc() {
-	returnData[dataLength - 1] = crc8(returnData, dataLength - 1);		// calculate crc8 for outgoing packet
+	returnData[dataLength - 1] = crc8(returnData, dataLength - 1);		// calculates crc8 for outgoing packet
 }
 
 void checkIncomingCrc() {		//crc check for incoming data
@@ -397,7 +390,6 @@ void checkIncomingCrc() {		//crc check for incoming data
 #endif			
 	}
 }
-
 
 
 /*
