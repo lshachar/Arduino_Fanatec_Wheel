@@ -182,27 +182,26 @@ void loop() {
 void readButtons() {
 #ifdef HASBUTTONS
 		for (int i = 0; i < buttonsnum; i++) {
-			if (!digitalRead(buttonsPins[i])) {		// if this input is low (button is pressed, all buttons use input pullup and ground connection)
-				returnData[2+ ((buttonsBits[i]-1) / 8)] |= (1 << (((buttonsBits[i]-1) % 8) ));	// raise  the correct button bit, as defined in buttonsBits[]
+			if (!digitalRead(buttonsPins[i])) {				// if this input is low the button is pressed. Reverse logic: all button inputs use the internal input pullup, and pressing the button completes the path to ground)
+				buttonBitChange(buttonsBits[i], true);		// raise the correct button bit, as defined in buttonsBits[]
 			}
 			else {
-				returnData[2 + ((buttonsBits[i]-1) / 8)] &= ~(1 << (((buttonsBits[i]-1) % 8) ));	// drop bit
+				buttonBitChange(buttonsBits[i], false); 	// drop bit
 			}
 		}
 #endif
-/
 
 #ifdef HAS_ANALOG_DPAD
 /*
-	VALUE		MIDPOINT	BUTTON				DpadVal
-		1023	933.5		nothing				0
-		844		763			right				1	
-		682		639.5		left				2
-		597		505.5		left+right			3
-		414		299			down				4
-		184		164.5		up					5
-		145		72.5		up+down(menu)		6
-		0		0			Dpad button			7
+	VALUE		MIDPOINT	BUTTON							DpadVal
+		1023	933.5		nothing							0
+		844		763			right							1	
+		682		639.5		left							2
+		597		505.5		left+right (calibrate center)	3
+		414		299			down							4
+		184		164.5		up								5
+		145		72.5		up+down (menu)					6
+		0		0			Dpad button						7
 */
 //In case you've used different resistors to what I used, uncomment the serial print command here to find your analog read values: 
 //Serial.println(analogRead(DPADPIN));
@@ -217,68 +216,55 @@ void readButtons() {
 							if (DpadRead > 72) DpadVal = 6; else
 								DpadVal = 7;
 
-
 	if (DpadVal != prevDpadVal) {		// only if button has changed, do something
 		Serial.print("Dpad button:");
 		Serial.println(DpadVal);
-		
-
 #if defined HAS_ANALOG_DPAD && defined HAS_TM1637_DISPLAY && defined DEBUG_ANALOG_DPAD
 		display.showNumberDec(DpadVal, false,1,3);		// print the dpad value on the lcd screen
 #endif	
-			
-		switch (prevDpadVal) {			// turn the previous button bit off.		todo:write this in a function
-		case 0: break;
-		case 1:	// right
-			returnData[2] &= ~(1 << 2); break;
-		case 2:	// left
-			returnData[2] &= ~(1 << 1); break;
-		case 3: // left+right
-			returnData[4] &= ~(1 << 1);			//Dpad button
-			returnData[4] &= ~(1 << 2); break;	//Joystick button
-		case 4:	// down
-			returnData[2] &= ~(1 << 3); break;
-		case 5:	// up
-			returnData[2] &= ~1;		break;
-		case 6: // up+down (menu)
-			returnData[4] &= ~(1 << 5); break;
-		case 7: // Dpad button
-			returnData[4] &= ~(1 << 1); break;
-		
-		}
-
-		switch (DpadVal) {			// turn the curernt button bit on.	
-		case 0: break;
-		case 1:	// right
-			returnData[2] |= (1 << 2); break;
-		case 2:	// left
-			returnData[2] |= (1 << 1); break;
-		case 3: // left+right
-			returnData[4] |= (1 << 1);			//Dpad button
-			returnData[4] |= (1 << 2); break;	//Joystick button
-		case 4:	// down
-			returnData[2] |= (1 << 3); break;
-		case 5:	// up
-			returnData[2] |= 1;		break;
-		case 6: // up+down (menu)
-			returnData[4] |= (1 << 5); break;
-		case 7: // Dpad button
-			returnData[4] |= (1 << 1); break;
-
-		}
-		/*
-				returnData[selectedButtonByte] ^= (1 << (incByte - '1'));	// toggles bit correcsponding to number read by serial print
-			*/
-		
+		dPadBitChange(prevDpadVal, false);	// turn the previous Dpad button bit off.
+		dPadBitChange(DpadVal, true);		// turn the current Dpad button bit on.		
 	}
 	prevDpadVal = DpadVal;
 #endif
 
 }
 
-void readSerial() 
+void dPadBitChange(uint8_t dPadVal, bool bitOn) {
+	// sets (raises or lowers) the correct button bits according to the Dpad button that was pressed or released
+	switch (dPadVal) {
+	case 0: break;
+	case 1:	// right
+		buttonBitChange(3, bitOn); break;
+	case 2:	// left
+		buttonBitChange(2, bitOn); break;
+	case 3: // left+right (calibrate wheel center point)
+		buttonBitChange(18, bitOn);			// Dpad button
+		buttonBitChange(19, bitOn); break;	// Joystick button
+	case 4:	// down
+		buttonBitChange(4, bitOn); break;
+	case 5:	// up
+		buttonBitChange(1, bitOn); break;
+	case 6: // up+down (menu)
+		buttonBitChange(22, bitOn); break;
+	case 7: // Dpad button
+		buttonBitChange(18, bitOn); break;
+	}
+}
+
+void buttonBitChange(uint8_t buttonBit, bool bitOn) {
+	// changes a selected bit in one of the 3 button bytes to either on (1) or off (0). Valid values for buttonBit is 1 to 24. See buttons list in last comment.
+	if (bitOn) {
+		returnData[2 + ((buttonBit - 1) / 8)] |= (1 << (((buttonBit - 1) % 8)));
+	}
+	else {
+		returnData[2 + ((buttonBit - 1) / 8)] &= ~(1 << (((buttonBit - 1) % 8)));
+	}
+}
+
+void readSerial()
 {
-	// read user inputs from serial connection
+	// read user inputs from serial connection. i = print mosI data, o = print misO data, a = view what is displayed on the rim's alphanumeric display. letters (A,B,C) selects corresponding button byte (first second or third), numbers (1..7) changes bits inside the selected byte. So user can send button presses to the wheelbase without having any physical button attached.
 	if (Serial.available() > 0) {
 		incByte = Serial.read();
 		Serial.println((char)incByte);
@@ -297,7 +283,6 @@ void readSerial()
 			printHex(returnData[selectedButtonByte], 2);
 			Serial.println();
 		}
-
 		if ((incByte >= '1') && (incByte <= '8'))
 		{
 			returnData[selectedButtonByte] ^= (1 << (incByte - '1'));	// toggles bit correcsponding to number read by serial print
