@@ -224,22 +224,7 @@ void readButtons() {
 		
 
 #if defined HAS_ANALOG_DPAD && defined HAS_TM1637_DISPLAY && defined DEBUG_ANALOG_DPAD
-		// print the dpad value on the lcd screen
-		byte dpadalpha;
-		switch (DpadVal) {
-			case 0:	dpadalpha=0x3f; break;
-			case 1: dpadalpha = 0x6; break;
-			case 2: dpadalpha = 0x5b; break;
-			case 3: dpadalpha = 0x4f; break;
-			case 4: dpadalpha = 0x66; break;
-			case 5: dpadalpha = 0x6d; break;
-			case 6: dpadalpha = 0x7d; break;
-			case 7: dpadalpha = 0x7; break;
-			case 8: dpadalpha = 0x7f; break;
-		}
-
-		TM_data[0] = dpadalpha;
-		display.setSegments(TM_data);	// todo: try display.showNumberDec(DpadVal,false);
+		display.showNumberDec(DpadVal, false,1,3);		// print the dpad value on the lcd screen
 #endif	
 			
 		switch (prevDpadVal) {			// turn the previous button bit off.		todo:write this in a function
