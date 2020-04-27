@@ -6,40 +6,36 @@
 #include <TM1637Display.h>
 #define TM_CLKPIN 3
 #define TM_DIOPIN 4
-#define TM_BRIGHTNESS 2		// (0..7), sets the brightness of the display. 0=min, 7=max
+#define TM_BRIGHTNESS 5		// (0..7), sets the brightness of the display. 0=min, 7=max
 TM1637Display display = TM1637Display(TM_CLKPIN, TM_DIOPIN);
 uint8_t TM_data[] = { 0x00, 0x00, 0x00, 0x00 };
 const uint8_t TM_race[] = { 0x50, 0x77, 0x58, 0x79 };
-#define DISPLAY_CRC8_ON_ALPHANUMERIC	// if you'd like to get 'CrC' message on the alphanumeric display, each time there's a crc8 mismatch, which means bad SPI communication with wheelbase. (message anyways gets sent to serial monitor.)
+#define DISPLAY_CRC8_ON_ALPHANUMERIC	// if you'd like to get 'CrC' message on the alphanumeric display, each time there's a crc8 mismatch, which means bad SPI communication with the wheelbase. (message anyways gets sent to serial monitor.) My advice: Keep this uncommented until everything works really well. then comment it, because there will always be some CRC errors and that's fine.
 const uint8_t TM_crc[] = {0x39, 0x50, 0x39};
 #endif
 
 #define HAS_ANALOG_DPAD
-//#define DEBUG_ANALOG_DPAD	// print the DPAD value on the alphanumeric display. only relevant if you have an analog dpad and a display.
-
+#define DEBUG_ANALOG_DPAD	// print the DPAD value on the alphanumeric display. Only relevant if you have an analog dpad, and only when trying to get the DPAD working. once it's working - uncomment this. (Dpad value is anyways sent to serial monitor)
 #ifdef  HAS_ANALOG_DPAD
 #define DPADPIN A0
 int prevDpadVal = 0;
 #endif
 
 #define dataLength 33
-#define CS_ISR 2		// currently, connect SPI Cable Select pin to digital pin 2. to be changed.
+#define CS_ISR 2		// connect SPI Cable Select pin to Arduino's D2 & D10. (See schematics)
 #define PRINTBIN(Num) for (uint32_t t = (1UL << (sizeof(Num) * 8) - 1); t; t >>= 1) Serial.write(Num& t ? '1' : '0'); // Prints a binary number with leading zeros (Automatic Handling)
 
-#define HASBUTTONS	// use digital and analog pins for steering wheel buttons. Note: Pins A7 and A6 do not have an internal pullup resistor. Serial data pins: D0, D1. SPI pins: D2, D10, D11, D12, D13. Display Pins: D3, D4. The rest of digital or analog pins can be used for buttons. (A6 and A7 can only be used for analogRead()  )
+#define HASBUTTONS	// use digital and analog pins for steering wheel buttons. Note: Pins A7 and A6 do not have an internal pullup resistor. Serial data pins: D0, D1. SPI pins: D2, D10, D11, D12, D13. Display Pins: D3, D4. The rest of digital and analog pins can be used for buttons. (also AFAIK A6 and A7 can only be used for analogRead()  )
 #ifdef HASBUTTONS
-#define buttonsnum 6								// how many buttons are you using?
+#define buttonsnum 6									// how many buttons are you using?
 uint8_t buttonsPins[] = { A5, A4, A3, A2, 8,  9};		// what arduino pins are you using? 
-uint8_t buttonsBits[] = { 8,  5,  13, 11, 9, 12};		// what bits do you want each button to affect. use last comment in this file as reference.
+uint8_t buttonsBits[] = { 8,  5,  13, 11, 9, 12};		// what bits do you want each button to affect? use last comment in this file as reference.
 
 #endif
 
 uint8_t mosiBuf[dataLength];	// buffer for the incoming data on the mosi line.	
-//volatile boolean process_it = false;
-volatile boolean CSTest = false;
 volatile unsigned long lastPrintMillis = 0;
 int selectedButtonByte = 2;		// button bytes are 3rd to 5th. initialize to 1st relevant byte.
-int countUpDown = 0;
 uint8_t tempincByte, incByte, prevPrintedByte, prevAlphaDisp[3];
 volatile uint8_t isrIndex = 0;
 unsigned long delayMillis = 400; // wait at least the delay time since last spi communication before printing out whatever came in.
@@ -144,7 +140,6 @@ void setup()
 
 void cableselect() {					// When CS line goes high - the rim should get ready to transmit the next returnData buffer, right from the begining. (so that the first byte (0xA5) will be sent out on the first Clock cycle (and after CS line went Low)
 	SPCR &= ~_BV(SPIE);					// turn OFF interrupts
-	//CSTest = true;
 	SPDR = returnData[0];				// load first byte into SPDR single-byte's buffer
 	isrIndex = 0;						// on next SPI interrupt(SPI_STC_vect), load the 2nd byte
 	SPCR |= _BV(SPIE);					// turn on interrupts
@@ -199,7 +194,7 @@ void readButtons() {
 
 #ifdef HAS_ANALOG_DPAD
 /*
-	VALUE		MIDPOINT	BUTTON
+	VALUE		MIDPOINT	BUTTON				DpadVal
 		1023	933.5		nothing				0
 		844		763			right				1	
 		682		639.5		left				2
@@ -209,7 +204,7 @@ void readButtons() {
 		145		72.5		up+down(menu)		6
 		0		0			Dpad button			7
 */
-//uncomment the serial print command to find your analog read values in case you've used different resistors to what I used.
+//In case you've used different resistors to what I used, uncomment the serial print command here to find your analog read values: 
 //Serial.println(analogRead(DPADPIN));
 	int DpadRead = analogRead(DPADPIN);
 	int DpadVal = 0;
@@ -221,7 +216,6 @@ void readButtons() {
 						if (DpadRead > 164) DpadVal = 5; else
 							if (DpadRead > 72) DpadVal = 6; else
 								DpadVal = 7;
-
 
 
 	if (DpadVal != prevDpadVal) {		// only if button has changed, do something
@@ -245,9 +239,8 @@ void readButtons() {
 		}
 
 		TM_data[0] = dpadalpha;
-		display.setSegments(TM_data);	// todo: try display.showNumberDec(dpadalpha,false);
-#endif		
-		
+		display.setSegments(TM_data);	// todo: try display.showNumberDec(DpadVal,false);
+#endif	
 			
 		switch (prevDpadVal) {			// turn the previous button bit off.		todo:write this in a function
 		case 0: break;
@@ -256,7 +249,8 @@ void readButtons() {
 		case 2:	// left
 			returnData[2] &= ~(1 << 1); break;
 		case 3: // left+right
-			returnData[2] &= ~(11 << 1); break;
+			returnData[4] &= ~(1 << 1);			//Dpad button
+			returnData[4] &= ~(1 << 2); break;	//Joystick button
 		case 4:	// down
 			returnData[2] &= ~(1 << 3); break;
 		case 5:	// up
@@ -275,7 +269,8 @@ void readButtons() {
 		case 2:	// left
 			returnData[2] |= (1 << 1); break;
 		case 3: // left+right
-			returnData[2] |= (11 << 1); break;
+			returnData[4] |= (1 << 1);			//Dpad button
+			returnData[4] |= (1 << 2); break;	//Joystick button
 		case 4:	// down
 			returnData[2] |= (1 << 3); break;
 		case 5:	// up
@@ -431,47 +426,57 @@ void checkIncomingCrc() {		//crc check for incoming data
 		display.setSegments(TM_crc);
 #endif			
 	}
-	//else { 
-	//	Serial.println("crc ok!");
-	//	printmosibuf();
-	//}
 }
 
 
 
 /*
-Clubsport wheel buttons, by bit, from 3rd byte on miso array to 5th byte
+Clubsport wheel buttons, by bit, from 3rd byte on miso array to 5th byte.
+The buttons numbers appear in the fanatec driver (mouse settings tab), and also in the 'clubsport Porsche 911 buttons.png' file.
+
+A
 1	D-pad Up
 2	D-pad Left
 3	D-pad Right
 4	D-pad Down
-5	Button 2 (buttom right, lower)
-6	Button 1 (top right, left one)
-7	Button 3 (buttom right, higer)
-8	Button 4 (top right, right one)
+5   Button 11
+6   Button 3
+7   Button 6
+8   Button 4
+
 B
-9(1)	Right Paddle (5 in contentmanager)
-10(2)	button 7  (top left, right one)
-11(3)	button 11 (buttom left, lower)
-12(4)	left paddle  (6 in contentmanager)
-13(5)	button 8  (top left, left one)
-14(6)	button 12 (buttom left, higher)
-15(7)	button 9  (3 buttons in triangle, left)
-16(8)	button 10 (3 buttons in triangle, right)
+9(1)    Right Paddle
+10(2)	Button 2			(top left, right one)
+11(3)   Button 8			(bottom left, lower)
+12(4)   Left paddle
+13(5)   Button 1			(top left, left one)
+14(6)   Button 5			(bottom left, higher)
+15(7)   Button 9			(3 buttons in triangle, left)
+16(8)   Button 10			(3 buttons in triangle, right)
+
 C
-17(1)	button 21 in contentmanager. does not show up in fanatec's driver
-18(2)	D-pad Button    (25 in contentmanager)
-19(3)	Joystick Button (26 in contentmanager)
-20(4)	Button 22       (3 buttons in triangle, top)
-21(5)	button 27 in contentmanager. does not show up in fanatec's driver
-22(6)	Menu button. (button 28 in contentmanager. does not show up in fanatec's driver)
+17(1)	Button 21 in contentmanager. Does not show up in fanatec's driver
+18(2)	D-pad Button
+19(3)	Joystick Button
+20(4)	Button 7			(3 buttons in triangle, top)
+21(5)	Button 27 in contentmanager. Does not show up in fanatec's driver
+22(6)	Menu button. Button 28 in contentmanager. Does not show up in fanatec's driver)
 23(7)
 24(8)
 
-button 8 on fanatec's driver, number 11 on this list, is controlled by 3rd bit on 2nd byte, of the 3 bytes that control buttons.
+example: button 8 on fanatec's driver, number 11 on this list, is controlled by 3rd bit on the 2nd byte, of the 3 bytes that control buttons.
 
 C6 - enters menu
 B8C6 - enters shifter calibration mode
 
-C6 6 23 23 6 6 - calibrates wheel center
+To calibrate wheel center, 
+A. Using the serial monitor, send:
+C6 6 23 23 6 6. (each space here means: hit return)
+
+B. Using the Dpad:
+Enter the menu by pressing both up+down bubttons on the Dpad,
+S_1 will appear on the serial monitor and on the alphanumeric display,
+Press both left+right buttons on the Dpad to calibrate wheel center,
+Press both up+down on the Dpad to exit menu.
+
 */
