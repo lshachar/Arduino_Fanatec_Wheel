@@ -1,4 +1,4 @@
-update=03/18/20 14:28:57
+update=28/04/2020 04:40:56
 version=1
 last_client=kicad
 [general]
@@ -30,7 +30,8 @@ MinMicroViaDrill=0.09999999999999999
 MinHoleToHole=0.25
 TrackWidth1=0.25
 TrackWidth2=0.25
-TrackWidth3=0.7
+TrackWidth3=0.5
+TrackWidth4=0.7
 ViaDiameter1=0.8
 ViaDrill1=0.4
 ViaDiameter2=1.6
@@ -242,7 +243,7 @@ dPairGap=0.25
 dPairViaGap=0.25
 [pcbnew/Netclasses/1]
 Name=thicker
-Clearance=0.6
+Clearance=0.2
 TrackWidth=0.7
 ViaDiameter=1.6
 ViaDrill=0.8
