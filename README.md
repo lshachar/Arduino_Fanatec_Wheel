@@ -1,17 +1,21 @@
 # Arduino_Fanatec_Wheel
 A do-it-yourself steering wheel to Fanatec's wheel base.<br/><br/>
-**31.12.2019 update:** [added support for a TM1637 module](https://raw.githubusercontent.com/lshachar/Arduino_Fanatec_Wheel/master/Schematics%20%26%20pcb%20layout/TM1637%20display.jpg), a 7 segments 4 digits display (only 3 digits are used). buy the display version that has decimal dots next to each digit! (the version I got is designed to display time, and does not have the 8th segment that is used as a dot ".").<br/>Copy the /libraries/TM1637/ folder to your arduino libraries folder (or install the library in any other way)<br/>
-[connect arduino D3 to CLK, and D4 to DIO. display works on 5V.](https://raw.githubusercontent.com/lshachar/Arduino_Fanatec_Wheel/master/Schematics%20%26%20pcb%20layout/how%20it%20looks%20like%20-%20with%20display%20and%20some%20buttons.png)<br/>
+**17.04.2020 Coronavirus update:** Version 1 is out!<br/>
+![Steering wheel assembled](https://raw.githubusercontent.com/lshachar/Arduino_Fanatec_Wheel/nice/Steering%20Wheel%20Photos/1%20assambled%202020-04-09%2008.11.24.jpg)
 
-**26.11.2019 update:** [new schematics and pcb layout.](https://raw.githubusercontent.com/lshachar/Arduino_Fanatec_Wheel/master/Schematics%20%26%20pcb%20layout/how%20it%20looks%20like.png) To be manufactured from a single layer board (bottom layer only). The top can easily be connected with some pieces of wire. (in the 3d screenshot file, the bottom layer is displayed on the top of the board - simply for better visualization.) The traces are extra big since I plan on attempting to fabricate the PCB on a CNC milling machine.<br/>
+*The buttons delay bug is fixed, buttons code is working great.<br/>
+*I fixed several errors with the SPI communication, which now works flawlessly.<br/>
+*Updated schematics - Added a 5 buttons Analog input that feeds into a single analog input on the arduino.<br/>
+(Added diode, and wire Digital input 2 and 10 together, both changes are necessary! please revise your board to include these changes if you've built one already!<br/>
+*Updated board layout - it's possible to either manufacture a single layer board, and use a few jumper wires for the top layer, or manufacture the complete two-layers board. (I used a CNC machine and milled a single layer board)
 
 **This project is donationware; if my work helped you out** [**please buy me a beer!**](https://paypal.me/lshachar?locale.x=en_US)<br/><br/>
   
 This project would never have been possible without the work of Darknao on his [BtClubSportWheel - converting any Fanatec CSW steering wheel to a standalone USB version](https://github.com/darknao/btClubSportWheel) project.
   
-Fanatec's wheelbases won't enable any force feedback, unless you have a Fanatec steering wheel attached to them.
+Fanatec's wheelbases won't enable any force feedback, unless you have a Fanatec steering wheel attached to it.
 With this project, you can use an arduino to communicate with the wheelbase over SPI, which will get the wheelbase working.
-buttons also work, but there is a pesky delay issue for a yet unknown reason.
+You can attach buttons, a D-Pad and an alphanumeric display, for the complete package!
 
 
 Here's a [how to make a male Fanatec SPI connector](Steering%20wheel%20connector%20-%20howto/Readme.md) (what the steering wheel has)<br/>
@@ -23,7 +27,7 @@ Also, [Alevale found where to buy the connector](https://github.com/darknao/btCl
 ### Several options:
 - Use a 5V arduino with a logic level shifter. (recommended, this is what I use. [(here are The schematics)](https://github.com/lshachar/Arduino_Fanatec_Wheel/blob/master/schamtics%20arduino%20nano-level%20shifter-fanatec%20round%20plug.png)
 - Use a 5V arduino **without** a logic shifter (can be risky to your precious wheelbase)
-- Use a 3.3V arduino (I haven't tried it)
+- Use a 3.3V arduino (I haven't tried it. They run on 8 MHZ instead of 16 MHZ for the 5V arduinos, but I'm pretty sure 8MHZ should be fast enough.)
 
 Code was tested on arduino Uno and Nano, and works fine. However, they both output 5V and the SPI communication on the wheelbase
 is using 3.3V.
@@ -34,17 +38,10 @@ and it is safe to simply use a voltage divider on the MISO line - to go from 5V 
 - **Note:** If you do end up going this route, make sure you wire everything up properly, and that you never set SPI as master on the arduino, or you will subject the wheelbase SPI to 5V. (I did subject the wheelbase SPI to 5V by mistake - and nothing got damaged.)<br/><br/>
 
 I recommend using an arduino nano and a logic shifter, as seen in the schematics.
-- **Note:** When you connect the arduino by USB cable to your computer, you are connecting the +5V power supply on your USB socket (your computer PSU), to the +5V power supply of your wheelbase.<br/>
-I've done this, and have not had issues with that, but this should be avoided...<br/>
-One of these supplies will have a slightly higher voltage than the other, and it will push current through the other supply. (similar to connecting two batteries in parallel. The charged battery will try to charge the drained battery.)<br/>
-So, it is better if you disconnected the 4 pin on the round plug from VIN before you connected the arduino to the computer. (as a temporary solution) or better, a permament fix:<br/>
-- Modify your micro USB cable, cut off the 5V wire.<br/>
-- Cut the 5V trace coming from the USB connector on the arduino nano.<br/>
+- **Note:** The diode is crucial to keep the 5V coming from the wheelbase, and the 5V coming from the computer USB, seperate. the diode will drop the 5V voltage from the wheelbase to ~4.3V, which is fine for the arduino to run on. When you plug the USB cable, the arduino will run on the 5V coming from the computer, and current cannot flow to the wheelbase because of the diode.<br/>
+fyi I have connected both power supplies together, and did not have anything go up in smoke. (but this is before I thought about using a diode. DO NOT ATTEMPT THIS YOURSELF.<br/>
 
-
-Won't it be easier to just switch to a 3.3V arduino? - Yes, probably, but most 3.3V arduinos run at 8MHZ, (16MHZ for the 5V boards), and I'm not sure if this will become an issue or not once I have [the buttons](https://github.com/darknao/btClubSportWheel/issues/12#issuecomment-522373884) implemented.
-
-[There's a lot of info over here](https://github.com/darknao/btClubSportWheel/issues/12)
+[There's a lot of (old) info here](https://github.com/darknao/btClubSportWheel/issues/12)
 
 
 # What to do if you gotta calibrate your wheelbase center?
@@ -59,5 +56,18 @@ C		(to change bits on the 3rd byte that affects buttons. C=3rd)
 6		(press the menu button again to exit the menu)  
 6		(release the menu button)  
 [Watch this If you don't know what I'm talking about](https://www.youtube.com/watch?v=yvhAKxjit8o)  
+(Hey - it's not an easy procedure, but it works!)
+if you made a PCB with a Dpad and alphanumeric display - you can calibrate the center point without connecting to the computer!
+Using the Dpad:
+Enter the menu by pressing both up+down bubttons on the Dpad,
+S_1 will appear on the serial monitor and on the alphanumeric display,
+Press both left+right buttons on the Dpad to calibrate wheel center,
+Press both up+down on the Dpad to exit menu. Done!
 
-(Hey - it's not an easy procedure, but at least it works!
+
+
+Previous updates:
+**31.12.2019 update:** [added support for a TM1637 module](https://raw.githubusercontent.com/lshachar/Arduino_Fanatec_Wheel/master/Schematics%20%26%20pcb%20layout/TM1637%20display.jpg), a 7 segments 4 digits display (only 3 digits are used). buy the display version that has decimal dots next to each digit! (the version I got is designed to display time, and does not have the 8th segment that is used as a dot ".").<br/>Copy the /libraries/TM1637/ folder to your arduino libraries folder (or install the library in any other way)<br/>
+[connect arduino D3 to CLK, and D4 to DIO. display works on 5V.](https://raw.githubusercontent.com/lshachar/Arduino_Fanatec_Wheel/master/Schematics%20%26%20pcb%20layout/how%20it%20looks%20like%20-%20with%20display%20and%20some%20buttons.png)<br/>
+
+**26.11.2019 update:** [new schematics and pcb layout.](https://raw.githubusercontent.com/lshachar/Arduino_Fanatec_Wheel/master/Schematics%20%26%20pcb%20layout/how%20it%20looks%20like.png) To be manufactured from a single layer board (bottom layer only). The top can easily be connected with some pieces of wire. (in the 3d screenshot file, the bottom layer is displayed on the top of the board - simply for better visualization.) The traces are extra big since I plan on attempting to fabricate the PCB on a CNC milling machine.<br/>

@@ -17,12 +17,4 @@
   <ItemGroup>
     <None Include="arduino_fanatec_wheel.ino" />
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="__vm\.arduino_fanatec_wheel.vsarduino.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="libraries\TM1637\TM1637Display.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
 </Project>

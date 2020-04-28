@@ -14,6 +14,17 @@ Comment3 ""
 Comment4 ""
 $EndDescr
 $Comp
+L arduino-fanatec-pcb-rescue:Simple_Chinese_Logic_level_shifter-Logic_LevelTranslator U1
+U 1 1 5E047133
+P 4000 4650
+F 0 "U1" H 4000 5531 50  0000 C CNN
+F 1 "Simple_Chinese_Logic_level_shifter" H 4000 5440 50  0000 C CNN
+F 2 "Package_DIP:DIP-12_W10.16mm" H 4000 3900 50  0001 C CNN
+F 3 "https://www.aliexpress.com/item/1972789887.html?spm=a2g0o.productlist.0.0.bbfa6f2fPhqdNn&algo_pvid=2205d59a-1fc0-49a4-90b1-846e095ca41e&algo_expid=2205d59a-1fc0-49a4-90b1-846e095ca41e-0&btsid=993594d5-036f-4640-9256-54d97fdaf998&ws_ab_test=searchweb0_0,searchweb201602_1,searchweb201603_53" H 4110 4745 50  0001 C CNN
+	1    4000 4650
+	1    0    0    -1  
+$EndComp
+$Comp
 L power:GND #PWR0101
 U 1 1 5E0466D1
 P 4100 5550
@@ -30,6 +41,8 @@ Wire Wire Line
 	3600 4550 3300 4550
 Wire Wire Line
 	3300 4550 3300 4350
+Wire Wire Line
+	3300 4350 2950 4350
 Wire Wire Line
 	3600 4750 3200 4750
 Wire Wire Line
@@ -338,10 +351,6 @@ Wire Wire Line
 	6350 4550 6750 4550
 Wire Wire Line
 	6750 4550 6750 4700
-Text Label 6900 4400 0    50   ~ 0
-D5
-Text Label 6850 4500 0    50   ~ 0
-TM_D
 Wire Wire Line
 	6350 4650 6700 4650
 Text Label 5050 4950 0    50   ~ 0
@@ -356,78 +365,6 @@ Text Label 5050 4750 0    50   ~ 0
 D8
 Text Label 5050 4050 0    50   ~ 0
 D1
-Wire Wire Line
-	7550 5400 7550 5300
-Connection ~ 7550 5400
-Wire Wire Line
-	7550 5300 7550 5200
-Connection ~ 7550 5300
-Wire Wire Line
-	7550 5200 7550 5100
-Connection ~ 7550 5200
-Wire Wire Line
-	7550 5100 7550 5000
-Connection ~ 7550 5100
-Wire Wire Line
-	7550 5000 7550 4900
-Connection ~ 7550 5000
-Wire Wire Line
-	7550 4900 7550 4800
-Connection ~ 7550 4900
-Wire Wire Line
-	7550 4800 7550 4700
-Connection ~ 7550 4800
-Wire Wire Line
-	7550 4700 7550 4600
-Connection ~ 7550 4700
-Wire Wire Line
-	7550 4600 7550 4500
-Connection ~ 7550 4600
-Wire Wire Line
-	7550 4500 7550 4400
-Connection ~ 7550 4500
-Wire Wire Line
-	7550 4400 7550 4300
-Connection ~ 7550 4400
-Wire Wire Line
-	7550 4300 7550 4200
-Connection ~ 7550 4300
-Wire Wire Line
-	7550 4200 7550 4100
-Connection ~ 7550 4200
-Wire Wire Line
-	7550 4100 7550 4000
-Connection ~ 7550 4100
-Wire Wire Line
-	7550 4000 7550 3900
-Connection ~ 7550 4000
-Wire Wire Line
-	7550 3900 7550 3800
-Connection ~ 7550 3900
-Wire Wire Line
-	7550 3800 7550 3700
-Connection ~ 7550 3800
-Wire Wire Line
-	7550 5550 7550 5400
-Text Label 6900 4300 0    50   ~ 0
-D6
-Text Label 6900 4200 0    50   ~ 0
-D7
-Text Label 6900 3800 0    50   ~ 0
-1
-Text Label 6900 3700 0    50   ~ 0
-0
-$Comp
-L Connector_Generic:Conn_02x18_Odd_Even J3
-U 1 1 5E0993EB
-P 7250 4500
-F 0 "J3" H 7300 5517 50  0000 C CNN
-F 1 "Breakout Connector 02x18_Odd_Even" H 7300 5426 50  0000 C CNN
-F 2 "Connector_PinSocket_2.54mm:PinSocket_2x18_P2.54mm_Vertical" H 7250 4500 50  0001 C CNN
-F 3 "~" H 7250 4500 50  0001 C CNN
-	1    7250 4500
-	1    0    0    -1  
-$EndComp
 Wire Wire Line
 	6700 4650 6700 4800
 Wire Wire Line
@@ -513,141 +450,8 @@ Wire Wire Line
 	3650 3450 4100 3450
 Connection ~ 4100 3450
 Wire Wire Line
-	7550 5550 6350 5550
-Connection ~ 6350 5550
-Wire Wire Line
-	6400 5400 7050 5400
-Wire Wire Line
-	6450 5300 7050 5300
-Wire Wire Line
-	6500 5200 7050 5200
-Wire Wire Line
-	6550 5100 7050 5100
-Text Label 6800 4600 0    50   ~ 0
-TM_CLK
-Wire Wire Line
-	6800 4600 7050 4600
-Wire Wire Line
-	6850 4500 7050 4500
-Wire Wire Line
-	6900 4400 7050 4400
-Wire Wire Line
-	6900 4300 7050 4300
-Wire Wire Line
-	6900 4200 7050 4200
-Wire Wire Line
-	6900 4000 7050 4000
-Wire Wire Line
-	6900 3900 7050 3900
-Wire Wire Line
-	6900 3800 7050 3800
-Wire Wire Line
-	6900 3700 7050 3700
-Wire Wire Line
-	6750 4700 7050 4700
-Wire Wire Line
-	6700 4800 7050 4800
-Wire Wire Line
-	6650 4900 7050 4900
-Wire Wire Line
-	6600 5000 7050 5000
-Wire Wire Line
-	6900 4100 7050 4100
-Text Label 6900 4100 0    50   ~ 0
-D8
-Text Label 6900 4000 0    50   ~ 0
-D9
-Text Label 6900 3900 0    50   ~ 0
-D10
-Wire Wire Line
 	4800 4150 4800 4950
 Wire Wire Line
 	4800 4950 5350 4950
 Connection ~ 4800 4950
-Text Notes 1850 4850 0    50   ~ 0
-GND
-Text Notes 1850 4650 0    50   ~ 0
-GND
-Text Notes 1900 4750 0    50   ~ 0
-5V
-Text Notes 1900 5150 0    50   ~ 0
-CS
-Text Notes 1850 5050 0    50   ~ 0
-3V3
-Text Notes 1850 4950 0    50   ~ 0
-SCK
-Text Notes 1800 4550 0    50   ~ 0
-MOSI
-Text Notes 1800 4450 0    50   ~ 0
-MISO
-Wire Wire Line
-	3300 4350 2950 4350
-Wire Wire Line
-	2200 4400 2950 4400
-Wire Wire Line
-	2950 4400 2950 4350
-Connection ~ 2950 4350
-Wire Wire Line
-	2200 4500 2950 4500
-Wire Wire Line
-	2950 4500 2950 4450
-Connection ~ 2950 4450
-Wire Wire Line
-	2200 4600 2950 4600
-Wire Wire Line
-	2950 4600 2950 4550
-Connection ~ 2950 4550
-Wire Wire Line
-	2200 4700 2950 4700
-Wire Wire Line
-	2950 4700 2950 4650
-Connection ~ 2950 4650
-Wire Wire Line
-	2200 4800 2950 4800
-Wire Wire Line
-	2950 4800 2950 4750
-Connection ~ 2950 4750
-Wire Wire Line
-	2200 4900 2950 4900
-Wire Wire Line
-	2950 4900 2950 4850
-Connection ~ 2950 4850
-Wire Wire Line
-	2200 5000 2950 5000
-Wire Wire Line
-	2950 5000 2950 4950
-Connection ~ 2950 4950
-Wire Wire Line
-	2200 5100 2950 5100
-Wire Wire Line
-	2950 5100 2950 5050
-Connection ~ 2950 5050
-$Comp
-L arduino-fanatec-pcb-rescue:Simple_Chinese_Logic_level_shifter-Logic_LevelTranslator U1
-U 1 1 5E047133
-P 4000 4650
-F 0 "U1" H 4000 5531 50  0000 C CNN
-F 1 "Simple_Chinese_Logic_level_shifter" H 4000 5440 50  0000 C CNN
-F 2 "Package_DIP:DIP-12_W10.16mm" H 4000 3900 50  0001 C CNN
-F 3 "https://www.aliexpress.com/item/1972789887.html?spm=a2g0o.productlist.0.0.bbfa6f2fPhqdNn&algo_pvid=2205d59a-1fc0-49a4-90b1-846e095ca41e&algo_expid=2205d59a-1fc0-49a4-90b1-846e095ca41e-0&btsid=993594d5-036f-4640-9256-54d97fdaf998&ws_ab_test=searchweb0_0,searchweb201602_1,searchweb201603_53" H 4110 4745 50  0001 C CNN
-	1    4000 4650
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	3900 5350 4100 5350
-Connection ~ 3900 5350
-Connection ~ 4100 5350
-$Comp
-L Connector:Conn_01x08_Female J1.2
-U 1 1 5EB646F8
-P 2000 4700
-F 0 "J1.2" H 2200 5200 50  0000 C CNN
-F 1 "Extra pin breakout" H 2200 5100 50  0000 C CNN
-F 2 "Connector_PinHeader_2.54mm:PinHeader_1x08_P2.54mm_Vertical" H 2000 4700 50  0001 C CNN
-F 3 "~" H 2000 4700 50  0001 C CNN
-	1    2000 4700
-	-1   0    0    -1  
-$EndComp
-Text Notes 8800 7750 0    50   ~ 0
-Designed by: Shachar Liberman\n
 $EndSCHEMATC
