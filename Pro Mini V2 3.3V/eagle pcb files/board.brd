@@ -3,7 +3,7 @@
 <eagle version="9.6.2">
 <drawing>
 <settings>
-<setting alwaysvectorfont="yes"/>
+<setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
 <grid distance="3" unitdist="mil" unit="mil" style="lines" multiple="1" display="yes" altdistance="5" altunitdist="mil" altunit="mil"/>
@@ -157,15 +157,17 @@
 <layer number="255" name="routoute" color="7" fill="1" visible="no" active="yes"/>
 </layers>
 <board>
-<fusionsync huburn="a.cGVyc29uYWw6dWUyZDNmMGU2" projecturn="a.cGVyc29uYWw6dWUyZDNmMGU2IzIwMjAwMjE2MjY2MTc3MzUx" f3durn="urn:adsk.wipprod:dm.lineage:n3kzW-DEQbq8_7y4DWoqgQ" pcbguid="" lastpulledtime="" lastsyncedchangeguid="" latestrevisionid="26ae5165-9002-451a-95df-174b9d77579b" lastsyncedrevisionid="26ae5165-9002-451a-95df-174b9d77579b" lastboardhashguid="82892f39-adaf-334c-56e9-445799ba8b56" lastpushedtime="2020-09-23T17:38:56Z" linktopcb3d="true"/>
+<fusionsync huburn="a.cGVyc29uYWw6dWUyZDNmMGU2" projecturn="a.cGVyc29uYWw6dWUyZDNmMGU2IzIwMjAwMjE2MjY2MTc3MzUx" f3durn="urn:adsk.wipprod:dm.lineage:n3kzW-DEQbq8_7y4DWoqgQ" pcbguid="" lastpulledtime="" lastsyncedchangeguid="" latestrevisionid="26ae5165-9002-451a-95df-174b9d77579b" lastsyncedrevisionid="26ae5165-9002-451a-95df-174b9d77579b" lastboardhashguid="82892f39-adaf-334c-56e9-445799ba8b56" lastpushedtime="2020-09-23T17:38:56Z" linktopcb3d="false"/>
 <plain>
 <circle x="0" y="0" radius="19.5" width="0.1524" layer="20"/>
 <hole x="-17" y="0" drill="2.70001875"/>
 <hole x="17" y="0" drill="2.70001875"/>
 <text x="-16.8148" y="6.4262" size="0.8128" layer="21">5V</text>
 <text x="-16.637" y="-7.747" size="0.8128" layer="21">CS</text>
-<text x="9.271" y="-16.129" size="0.8128" layer="22" rot="MR0">5V</text>
-<text x="12.2428" y="-11.7094" size="0.8128" layer="22" rot="MR0">GND</text>
+<text x="-2.3876" y="-17.5006" size="0.8128" layer="22" rot="MR0">5V</text>
+<text x="4.699" y="-17.5006" size="0.8128" layer="22" rot="MR0">GND</text>
+<text x="2.1844" y="-17.5006" size="0.8128" layer="21">GND</text>
+<text x="-3.9878" y="-17.5006" size="0.8128" layer="21">5V</text>
 </plain>
 <libraries>
 <library name="Arduino-clone">
@@ -280,43 +282,6 @@ Würth 6200xxxxx22 series
 </polygon>
 </package>
 </packages>
-</library>
-<library name="adafruit" urn="urn:adsk.eagle:library:420">
-<packages>
-<package name="DO41-10" urn="urn:adsk.eagle:footprint:6239679/1" library_version="2">
-<description>&lt;B&gt;DIODE&lt;/B&gt;&lt;p&gt;
-diameter 2.54 mm, horizontal, grid 10.16 mm</description>
-<wire x1="2.032" y1="-1.27" x2="-2.032" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="2.032" y1="-1.27" x2="2.032" y2="1.27" width="0.1524" layer="21"/>
-<wire x1="-2.032" y1="1.27" x2="2.032" y2="1.27" width="0.1524" layer="21"/>
-<wire x1="-2.032" y1="1.27" x2="-2.032" y2="-1.27" width="0.1524" layer="21"/>
-<wire x1="5.08" y1="0" x2="4.064" y2="0" width="0.762" layer="51"/>
-<wire x1="-5.08" y1="0" x2="-4.064" y2="0" width="0.762" layer="51"/>
-<wire x1="-0.635" y1="0" x2="0" y2="0" width="0.1524" layer="21"/>
-<wire x1="1.016" y1="0.635" x2="1.016" y2="-0.635" width="0.1524" layer="21"/>
-<wire x1="1.016" y1="-0.635" x2="0" y2="0" width="0.1524" layer="21"/>
-<wire x1="0" y1="0" x2="1.524" y2="0" width="0.1524" layer="21"/>
-<wire x1="0" y1="0" x2="1.016" y2="0.635" width="0.1524" layer="21"/>
-<wire x1="0" y1="0.635" x2="0" y2="0" width="0.1524" layer="21"/>
-<wire x1="0" y1="0" x2="0" y2="-0.635" width="0.1524" layer="21"/>
-<pad name="A" x="5.08" y="0" drill="1.1176" diameter="1.9304"/>
-<pad name="C" x="-5.08" y="0" drill="1.1176" diameter="1.9304"/>
-<text x="-2.032" y="1.651" size="1.27" layer="25" ratio="10">&gt;NAME</text>
-<text x="-2.032" y="-2.794" size="1.27" layer="27" ratio="10">&gt;VALUE</text>
-<rectangle x1="-1.651" y1="-1.27" x2="-1.143" y2="1.27" layer="21"/>
-<rectangle x1="2.032" y1="-0.381" x2="3.937" y2="0.381" layer="21"/>
-<rectangle x1="-3.937" y1="-0.381" x2="-2.032" y2="0.381" layer="21"/>
-</package>
-</packages>
-<packages3d>
-<package3d name="DO41-10" urn="urn:adsk.eagle:package:6240344/1" type="box" library_version="2">
-<description>&lt;B&gt;DIODE&lt;/B&gt;&lt;p&gt;
-diameter 2.54 mm, horizontal, grid 10.16 mm</description>
-<packageinstances>
-<packageinstance name="DO41-10"/>
-</packageinstances>
-</package3d>
-</packages3d>
 </library>
 <library name="con-molex" urn="urn:adsk.eagle:library:165">
 <description>&lt;b&gt;Molex Connectors&lt;/b&gt;&lt;p&gt;
@@ -537,22 +502,17 @@ design rules under a new name.</description>
 </autorouter>
 <elements>
 <element name="U$7" library="Arduino-clone" package="PRO-MINI-5BOT" override_package3d_urn="urn:adsk.eagle:package:23456791/2" override_package_urn="urn:adsk.eagle:footprint:23456792/1" value="PRO-MINI_5BOT" x="1.2954" y="14.9606" smashed="yes" rot="R180"/>
-<element name="D1" library="adafruit" library_urn="urn:adsk.eagle:library:420" package="DO41-10" package3d_urn="urn:adsk.eagle:package:6240344/1" override_package3d_urn="urn:adsk.eagle:package:23456826/2" override_package_urn="urn:adsk.eagle:footprint:6239679/1" value="1N4004" x="0.1524" y="-17.1958" smashed="yes">
-<attribute name="NAME" x="-1.8796" y="-15.5448" size="1.27" layer="25" ratio="10"/>
-<attribute name="VALUE" x="-1.8796" y="-19.9898" size="1.27" layer="27" ratio="10"/>
-</element>
 <element name="X1" library="con-JST PH" package="B8B-PH-K-S" value="B8B-PH-KL" x="-12.954" y="-0.127" smashed="yes" rot="R270">
 <attribute name="NAME" x="-11.303" y="7.732" size="1.016" layer="25" rot="R180" align="bottom-center"/>
 <attribute name="VALUE" x="-11.684" y="-7.127" size="1.016" layer="27" rot="R270" align="bottom-right"/>
 </element>
-<element name="X2" library="con-molex" library_urn="urn:adsk.eagle:library:165" package="87758-0216" package3d_urn="urn:adsk.eagle:package:8078894/1" value="" x="10.414" y="-13.5128" smashed="yes" rot="R135">
-<attribute name="MF" value="MOLEX" x="10.414" y="-13.5128" size="1.778" layer="27" rot="R135" display="off"/>
-<attribute name="MPN" value="87758-0216" x="10.414" y="-13.5128" size="1.778" layer="27" rot="R135" display="off"/>
-<attribute name="NAME" x="12.486809375" y="-13.16419375" size="1.27" layer="25" rot="R225"/>
-<attribute name="OC_FARNELL" value="unknown" x="10.414" y="-13.5128" size="1.778" layer="27" rot="R135" display="off"/>
-<attribute name="OC_NEWARK" value="94M1513" x="10.414" y="-13.5128" size="1.778" layer="27" rot="R135" display="off"/>
-<attribute name="POPULARITY" value="4" x="10.414" y="-13.5128" size="1.778" layer="27" rot="R135" display="off"/>
-<attribute name="VALUE" x="16.36628125" y="-11.871034375" size="1.27" layer="27" rot="R225"/>
+<element name="X2" library="con-molex" library_urn="urn:adsk.eagle:library:165" package="87758-0216" package3d_urn="urn:adsk.eagle:package:8078894/1" value="" x="0.0508" y="-17.1704" smashed="yes" rot="R90">
+<attribute name="MF" value="MOLEX" x="0.0508" y="-17.1704" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="MPN" value="87758-0216" x="0.0508" y="-17.1704" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="OC_FARNELL" value="unknown" x="0.0508" y="-17.1704" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="OC_NEWARK" value="94M1513" x="0.0508" y="-17.1704" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="POPULARITY" value="4" x="0.0508" y="-17.1704" size="1.778" layer="27" rot="R90" display="off"/>
+<attribute name="VALUE" x="5.420603125" y="-20.2184" size="1.27" layer="27" rot="R180"/>
 </element>
 </elements>
 <signals>
@@ -631,24 +591,15 @@ design rules under a new name.</description>
 <contactref element="X2" pad="1"/>
 </signal>
 <signal name="4_5V">
-<contactref element="D1" pad="A"/>
 <contactref element="X1" pad="8"/>
 <wire x1="-12.954" y1="6.873" x2="-14.6304" y2="5.1966" width="0.4064" layer="1"/>
-<wire x1="-14.6304" y1="5.1966" x2="-14.6304" y2="-10.287" width="0.4064" layer="1"/>
-<wire x1="-14.6304" y1="-10.287" x2="-9.2202" y2="-15.6972" width="0.4064" layer="1"/>
-<wire x1="5.2324" y1="-17.1958" x2="3.7338" y2="-15.6972" width="0.4064" layer="1"/>
-<wire x1="-9.2202" y1="-15.6972" x2="3.7338" y2="-15.6972" width="0.4064" layer="1"/>
+<wire x1="-14.6304" y1="5.1966" x2="-14.6304" y2="-8.763" width="0.4064" layer="1"/>
 <contactref element="X2" pad="2"/>
-<wire x1="8.229596875" y1="-15.6972" x2="9.706890625" y2="-14.21990625" width="0.4064" layer="1"/>
-<wire x1="3.7338" y1="-15.6972" x2="8.229596875" y2="-15.6972" width="0.4064" layer="1"/>
+<wire x1="-6.223" y1="-17.1704" x2="-0.9492" y2="-17.1704" width="0.4064" layer="1"/>
+<wire x1="-14.6304" y1="-8.763" x2="-6.223" y2="-17.1704" width="0.4064" layer="1"/>
 </signal>
 <signal name="RAW">
-<contactref element="D1" pad="C"/>
 <contactref element="U$7" pad="RAW"/>
-<wire x1="-4.9276" y1="-17.1958" x2="-6.5786" y2="-17.1958" width="0.4064" layer="16"/>
-<wire x1="-6.5786" y1="-17.1958" x2="-8.0772" y2="-15.6972" width="0.4064" layer="16"/>
-<wire x1="-8.0772" y1="-15.6972" x2="-8.0772" y2="-12.192" width="0.4064" layer="16"/>
-<wire x1="-8.0772" y1="-12.192" x2="-7.5946" y2="-11.7094" width="0.4064" layer="16"/>
 </signal>
 </signals>
 <mfgpreviewcolors>

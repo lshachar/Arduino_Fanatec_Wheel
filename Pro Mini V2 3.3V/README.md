@@ -5,8 +5,7 @@ What you'll need:
 * FTDI Adapter USB to TTL Programmer
 * PCB [can be found here](eagle%20pcb%20files/Gerber.zip)
   * upload `Gerber.zip` to a PCB service like JLCPCB and order them
-* 1x Diode
-* 6x M5x20mm countersunk screws (like DIN 7991)
+* 6x M5x20mm countersunk screws (e.g. DIN 7991)
 
 optional:
 * 8 pin JST connector
@@ -14,6 +13,9 @@ optional:
 
 # How To
 * Make sure that the solder bridge on the Pro Mini is set to 3.3V
+* uncomment following lines:
+  * `#define HAS_TM1637_DISPLAY` - we are not using the TM1637 display module
+  * `#define HAS_ANALOG_DPAD` - otherwise the funky switch is constantly pressed
 * Program the Pro Mini using the option ATmega328P (5V, 16 MHz)
 * Mark the cable coming from the QR which is 5V
 * Solder the cables onto the pcb. Make sure that the marked cable (5V) is aligned with the 5V PCB pin
@@ -28,7 +30,8 @@ optional:
 ![Done](photos/03.JPG)
 ![Done2](photos/04.JPG)
 
+# Warning
+If you ever connect the FTDI to the board while also having it connected to the wheelbase **make sure to remove the VCC pin on the FTDI interface**, otherwise it might **damage your wheelbase** because this will connect the 3.3V coming from the FTDI with the 3.3V of the wheelbase.
+
 # Downsides
-* In some rare cases my base reconnects if I connect the emulator to it. Nothing wild, just let it recalibrate and you're ready to race 
-* The base thinks that the funky push button is constantly pushed. I don't really know why this happens so I just disabled the code which makes the button functionality work.
-You can also find two pins on the PCB, 5V and GND, to power another button controller like an ESP32-BLE.
+* In some rare cases my base reconnects if I connect the emulator to it. Nothing wild, just let it recalibrate and you're ready to race
