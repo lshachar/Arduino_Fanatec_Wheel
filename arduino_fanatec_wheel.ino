@@ -13,8 +13,8 @@ const uint8_t TM_race[] = { 0x50, 0x77, 0x58, 0x79 };
 const uint8_t TM_crc[] = {0x39, 0x50, 0x39};
 #endif
 
-#define DISPLAY_CRC8_MATCH_ON_SERIAL             // keep this and the next line uncommented, until you get many more "crc8 match" lines on the serial port, than crc8 mismatch lines. (I am getting somewhere between 10 to 200 "match" lines before a single "mismatch" line)
-#define DISPLAY_CRC8_MISMATCH_ON_SERIAL          // once you know the SPI port is mostly receiving data correctly, you can comment out both lines (or use them for easy debugging)
+//#define DISPLAY_CRC8_MATCH_ON_SERIAL             // keep this and the next line uncommented, until you get many more "crc8 match" lines on the serial port, than crc8 mismatch lines. (I am getting somewhere between 10 to 200 "match" lines before a single "mismatch" line)
+//#define DISPLAY_CRC8_MISMATCH_ON_SERIAL          // once you know the SPI port is mostly receiving data correctly, you can comment out both lines (or use them for easy debugging)
 //#define DISPLAY_CRC8_MISMATCH_ON_ALPHANUMERIC  // use this if you'd like to get a 'CrC' message displayed on the alphanumeric display, each time there's a crc8 mismatch, which means bad SPI communication with the wheelbase. My advice: always keep this commented. But if you know you have SPI communication issues, this can help you to know when communication is faulty without starting the serial monitor.
 
 
@@ -160,8 +160,8 @@ void loop() {
 	readButtons();
 	calcOutgoingCrc();
 	printButtonByteToSerial();
-	checkIncomingCrc();
-	refreshAlphanumericDisplays();
+	bool crc8Stat = checkIncomingCrc();
+	refreshAlphanumericDisplays(crc8Stat);
 }
 
 void readButtons() {
@@ -258,7 +258,7 @@ void readSerial()
 		if (incByte == 'o')
 			printmisobuf();
 		if (incByte == 'd')
-			refreshAlphanumericDisplays();
+			refreshAlphanumericDisplays(true);
 		if ((incByte >= 'A') && (incByte <= 'J')) {		// send A,B,C to choose 1st, 2nd, 3rd button byte
 			selectedButtonByte = (incByte - 'A' + 2); 	// first button byte is 3rd in array, or cell no 2 to cell no 4 in array
 			Serial.print("Selected button byte:");
@@ -284,7 +284,8 @@ void printHex(int num, int precision) {
 	Serial.print(tmp);
 }
 
-void refreshAlphanumericDisplays() {
+void refreshAlphanumericDisplays(bool crc8Stat) {
+  Serial.println(crc8Stat);
 	// display current alphanumeric information through serial port / TM1637 display
 	bool displaychanged = false;
 	for (int i = 2; i <= 4; i++) {						// cells 2 to 4 in miso data is alphanumeric data
@@ -293,23 +294,23 @@ void refreshAlphanumericDisplays() {
 			break;
 		}
 	}
-	if (displaychanged) {
+	if (displaychanged) {                     // print to serial in any case (even if packet has bad crc8). (only print to alphanumeric display if it has good crc8)
 		for (int i = 2; i <= 4; i++) {
 			uint8_t p = mosiBuf[i] & 0x7F;				// remove the . (dot) bit
 			switch (p) {
 			case 0x3f:	Serial.print("0"); break;
-			case 0x6:	Serial.print("1"); break;
+			case 0x6:	  Serial.print("1"); break;
 			case 0x5b:	Serial.print("2"); break;
 			case 0x4f:	Serial.print("3"); break;
 			case 0x66:	Serial.print("4"); break;
 			case 0x6d:	Serial.print("S"); break;
 			case 0x7d:	Serial.print("6"); break;
-			case 0x7:	Serial.print("7"); break;
+			case 0x7:	  Serial.print("7"); break;
 			case 0x7f:	Serial.print("8"); break;
 			case 0x6f:	Serial.print("9"); break;
 			case 0x39:	Serial.print("C"); break;
 			case 0x38:	Serial.print("L"); break;
-			case 0x8:	Serial.print("_"); break;
+			case 0x8:	  Serial.print("_"); break;
 			case 0x79:	Serial.print("E"); break;
 			case 0x54:	Serial.print("n"); break;
 			case 0x71:	Serial.print("F"); break;
@@ -332,14 +333,23 @@ void refreshAlphanumericDisplays() {
 			else
 				Serial.print("  ");
 
-			prevAlphaDisp[i - 2] = mosiBuf[i];
+      if (crc8Stat)
+			  prevAlphaDisp[i - 2] = mosiBuf[i];    // only update the previous display array if current packet has good crc8. (If not doing this test, text will not print out to alphanumeric display properly)
 		}
 		Serial.println();
 #ifdef HAS_TM1637_DISPLAY
-		for (int i = 2; i <= 4; i++) {
-			TM_data[i-2] = mosiBuf[i];
-		}
-		display.setSegments(TM_data);
+    Serial.println(crc8Stat);
+    if (crc8Stat == false) {                            // Don't refresh the alphanumeric display if the current packet is broken (has bad crc8 attached to it)
+      Serial.print("returning. crc8Stat:");
+      Serial.println(crc8Stat);
+    }
+    else {
+      Serial.println("printing");
+  		for (int i = 2; i <= 4; i++) {
+  			TM_data[i-2] = mosiBuf[i];
+  		}
+  		display.setSegments(TM_data);
+    }
 #endif
 	}
 }
@@ -384,7 +394,7 @@ void calcOutgoingCrc() {
 	returnData[dataLength - 1] = crc8(returnData, dataLength - 1);		// calculates crc8 for outgoing packet
 }
 
-void checkIncomingCrc() {		//crc check for incoming data
+bool checkIncomingCrc() {		// crc check for incoming data. returns true if correct crc8 is found in the incoming data
 	uint8_t crc = crc8(mosiBuf, dataLength - 1);		//Serial.print("calc crc");			//Serial.println(crc,HEX);
 	if (crc != mosiBuf[dataLength - 1]) {
 #ifdef DISPLAY_CRC8_MISMATCH_ON_SERIAL
@@ -393,12 +403,14 @@ void checkIncomingCrc() {		//crc check for incoming data
 #endif
 #ifdef DISPLAY_CRC8_MISMATCH_ON_ALPHANUMERIC
 		display.setSegments(TM_crc);
-#endif			
+#endif
+  return false;
 	}
+  else
 #ifdef DISPLAY_CRC8_MATCH_ON_SERIAL
-   else
   Serial.println("crc8 match!");
 #endif
+  return true;
 }
 
 
