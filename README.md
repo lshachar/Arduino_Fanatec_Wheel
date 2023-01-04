@@ -11,7 +11,7 @@ A do-it-yourself steering wheel to Fanatec's wheel base.<br/><br/>
 *Updated board layout - it's possible to either manufacture a single layer board, and solder a few jumper wires for the top layer, or manufacture the complete two-layers board. (I used a CNC machine and milled a single layer board)
 ________________
 
-**This project is donationware, if my work helped you out** [**maybe get me a beer! :)**](https://paypal.me/lshachar?locale.x=en_US)<br/><br/>
+**This project is donationware, if my work helped you out** [**maybe get me a beer! :)**](https://paypal.me/lshachar)<br/><br/>
   
 Fanatec's wheelbases won't enable any force feedback, unless you have a Fanatec steering wheel attached to it.
 With this project, you can use an arduino to communicate with the wheelbase over SPI, which will get the wheelbase working.
