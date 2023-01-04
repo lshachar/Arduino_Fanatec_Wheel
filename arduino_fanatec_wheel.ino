@@ -10,12 +10,16 @@
 TM1637Display display = TM1637Display(TM_CLKPIN, TM_DIOPIN);
 uint8_t TM_data[] = { 0x00, 0x00, 0x00, 0x00 };
 const uint8_t TM_race[] = { 0x50, 0x77, 0x58, 0x79 };
-#define DISPLAY_CRC8_ON_ALPHANUMERIC	// if you'd like to get 'CrC' message on the alphanumeric display, each time there's a crc8 mismatch, which means bad SPI communication with the wheelbase. (message anyways gets sent to serial monitor.) My advice: Keep this uncommented until everything works really well. then comment it, because there will always be some CRC errors and that's fine.
 const uint8_t TM_crc[] = {0x39, 0x50, 0x39};
 #endif
 
+#define DISPLAY_CRC8_MATCH_ON_SERIAL             // keep this and the next line uncommented, until you get many more "crc8 match" lines on the serial port, than crc8 mismatch lines. (I am getting somewhere between 10 to 200 "match" lines before a single "mismatch" line)
+#define DISPLAY_CRC8_MISMATCH_ON_SERIAL          // once you know the SPI port is mostly receiving data correctly, you can comment out both lines (or use them for easy debugging)
+//#define DISPLAY_CRC8_MISMATCH_ON_ALPHANUMERIC  // use this if you'd like to get a 'CrC' message displayed on the alphanumeric display, each time there's a crc8 mismatch, which means bad SPI communication with the wheelbase. My advice: always keep this commented. But if you know you have SPI communication issues, this can help you to know when communication is faulty without starting the serial monitor.
+
+
 #define HAS_ANALOG_DPAD
-#define DEBUG_ANALOG_DPAD	// print the DPAD value on the alphanumeric display. Only relevant if you have an analog dpad, and only when trying to get the DPAD working. once it's working - uncomment this. (Dpad value is anyways sent to serial monitor)
+//#define DEBUG_ANALOG_DPAD	// print the DPAD value on the alphanumeric display. Only relevant if you have an analog dpad, and only when trying to get the DPAD working. once it's working - uncomment this. (Dpad value is always sent to serial monitor)
 #ifdef  HAS_ANALOG_DPAD
 #define DPADPIN A0
 int prevDpadVal = 0;
@@ -29,7 +33,7 @@ int prevDpadVal = 0;
 #ifdef HASBUTTONS
 #define buttonsnum 6									// how many buttons are you using?
 uint8_t buttonsPins[] = { A5, A4, A3, A2, 8,  9};		// what arduino pins are you using? 
-uint8_t buttonsBits[] = { 8,  5,  13, 11, 9, 12};		// what bits do you want each button to affect? use last comment in this file as reference.
+uint8_t buttonsBits[] = { 8,  5,  13, 11, 9, 12};		// what bits do you want each button to affect? use the last comment in this file as reference.
 #endif
 
 uint8_t mosiBuf[dataLength];	// buffer for the incoming data on the mosi line.	
@@ -244,7 +248,7 @@ void buttonBitChange(uint8_t buttonBit, bool bitOn) {
 }
 
 void readSerial()
-// reads user inputs from serial connection. i = print mosI data, o = print misO data, a = view what is displayed on the rim's alphanumeric display. letters (A,B,C) = selects corresponding button byte (first second or third), numbers (1..7) = changes bits inside the selected byte. So user can send button presses to the wheelbase without having any physical buttons attached.
+  // reads user inputs from serial connection. i = print mosI data, o = print misO data, d = view what is displayed on the rim's alphanumeric display. letters (A,B,C) = selects corresponding button byte (first second or third), numbers (1..7) = changes bits inside the selected byte. So user can send button presses to the wheelbase without having any physical buttons attached.
 {
 	if (Serial.available() > 0) {
 		incByte = Serial.read();
@@ -383,12 +387,18 @@ void calcOutgoingCrc() {
 void checkIncomingCrc() {		//crc check for incoming data
 	uint8_t crc = crc8(mosiBuf, dataLength - 1);		//Serial.print("calc crc");			//Serial.println(crc,HEX);
 	if (crc != mosiBuf[dataLength - 1]) {
+#ifdef DISPLAY_CRC8_MISMATCH_ON_SERIAL
 		Serial.println("_____________incoming data crc8 mismatch!________");
 		printmosibuf();
-#ifdef DISPLAY_CRC8_ON_ALPHANUMERIC
+#endif
+#ifdef DISPLAY_CRC8_MISMATCH_ON_ALPHANUMERIC
 		display.setSegments(TM_crc);
 #endif			
 	}
+#ifdef DISPLAY_CRC8_MATCH_ON_SERIAL
+   else
+  Serial.println("crc8 match!");
+#endif
 }
 
 
