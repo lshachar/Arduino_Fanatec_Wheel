@@ -13,10 +13,10 @@ const uint8_t TM_race[] = { 0x50, 0x77, 0x58, 0x79 };
 const uint8_t TM_crc[] = {0x39, 0x50, 0x39};
 #endif
 
-//#define DISPLAY_CRC8_MATCH_ON_SERIAL             // keep this and the next line uncommented, until you get many more "crc8 match" lines on the serial port, than crc8 mismatch lines. (I am getting somewhere between 10 to 200 "match" lines before a single "mismatch" line)
-//#define DISPLAY_CRC8_MISMATCH_ON_SERIAL          // once you know the SPI port is mostly receiving data correctly, you can comment out both lines (or use them for easy debugging)
-//#define DISPLAY_CRC8_MISMATCH_ON_ALPHANUMERIC  // use this if you'd like to get a 'CrC' message displayed on the alphanumeric display, each time there's a crc8 mismatch, which means bad SPI communication with the wheelbase. My advice: always keep this commented. But if you know you have SPI communication issues, this can help you to know when communication is faulty without starting the serial monitor.
-
+#define DISPLAY_CRC8_MATCH_ON_SERIAL             // keep this and the next line uncommented, until you get many more "crc8 match" lines on the serial port, than crc8 mismatch lines. (I am mostly getting somewhere between 10 to 200 "match" lines before a single "mismatch" line)
+#define DISPLAY_CRC8_MISMATCH_ON_SERIAL          // once you know the SPI port is mostly receiving data correctly, you can comment out both lines (or use them for easy debugging)
+//#define DISPLAY_CRC8_MISMATCH_ON_ALPHANUMERIC    // use this if you'd like to get a 'CrC' message displayed on the alphanumeric display, each time there's a crc8 mismatch, which means bad SPI communication with the wheelbase. My advice: always keep this commented. If you do have some SPI communication issues, this might help you to know when communication is faulty without looking at the serial monitor.
+//#define DISPLAY_ALPHANUMERIC_DATA_WHEN_MISMATCH_ON_SERIAL  // When getting some (likely broken) alphanumeric text on a packet with mismatched crc8, you might want to view the text on the serial monitor. In that case uncomment this line. (keep this commented to tidy things up)
 
 #define HAS_ANALOG_DPAD
 //#define DEBUG_ANALOG_DPAD	// print the DPAD value on the alphanumeric display. Only relevant if you have an analog dpad, and only when trying to get the DPAD working. once it's working - uncomment this. (Dpad value is always sent to serial monitor)
@@ -285,7 +285,6 @@ void printHex(int num, int precision) {
 }
 
 void refreshAlphanumericDisplays(bool crc8Stat) {
-  Serial.println(crc8Stat);
 	// display current alphanumeric information through serial port / TM1637 display
 	bool displaychanged = false;
 	for (int i = 2; i <= 4; i++) {						// cells 2 to 4 in miso data is alphanumeric data
@@ -294,7 +293,13 @@ void refreshAlphanumericDisplays(bool crc8Stat) {
 			break;
 		}
 	}
-	if (displaychanged) {                     // print to serial in any case (even if packet has bad crc8). (only print to alphanumeric display if it has good crc8)
+#ifdef    DISPLAY_ALPHANUMERIC_DATA_WHEN_MISMATCH_ON_SERIAL   // print to serial in any case (even if packet has bad crc8). (only print to alphanumeric display if it has good crc8)
+  if (displaychanged) {                     
+#else                                                         // prints to serial monitor and alphanumeric display only if packet has good crc8
+  if (crc8Stat && displaychanged) {                     
+#endif
+
+
 		for (int i = 2; i <= 4; i++) {
 			uint8_t p = mosiBuf[i] & 0x7F;				// remove the . (dot) bit
 			switch (p) {
@@ -336,15 +341,12 @@ void refreshAlphanumericDisplays(bool crc8Stat) {
       if (crc8Stat)
 			  prevAlphaDisp[i - 2] = mosiBuf[i];    // only update the previous display array if current packet has good crc8. (If not doing this test, text will not print out to alphanumeric display properly)
 		}
-		Serial.println();
+    if (!crc8Stat)
+      Serial.println(" [crc8 mismatch]");
+    else
+		  Serial.println();
 #ifdef HAS_TM1637_DISPLAY
-    Serial.println(crc8Stat);
-    if (crc8Stat == false) {                            // Don't refresh the alphanumeric display if the current packet is broken (has bad crc8 attached to it)
-      Serial.print("returning. crc8Stat:");
-      Serial.println(crc8Stat);
-    }
-    else {
-      Serial.println("printing");
+    if (crc8Stat) {                            // Only refresh the alphanumeric display if the current packet is intact (has proper crc8 attached to it) {
   		for (int i = 2; i <= 4; i++) {
   			TM_data[i-2] = mosiBuf[i];
   		}
