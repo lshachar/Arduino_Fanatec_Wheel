@@ -1,5 +1,11 @@
 # Arduino_Fanatec_Wheel
 A do-it-yourself steering wheel to Fanatec's wheel base.<br/><br/>
+**29.10.2020** Run the project on a 3.3V Arduino without a logic shifter<br/>
+![Assembled Pro Mini with PCB and QR Adapter](Pro%20Mini%20V2%203.3V/photos/03.JPG)
+[more info here](Pro%20Mini%20V2%203.3V/README.md)
+
+*You can run the code on a 3.3V Arduino without the need for a logic shifter. This allows for a small enough pcb and 3D model to hold it, which you can then mount onto your custom wheel. Because the model is only 16mm high you won't have any space issues.
+________________
 **28.04.2020 Coronavirus update:** Version 1 is out!<br/>
 ![Steering wheel assembled](https://raw.githubusercontent.com/lshachar/Arduino_Fanatec_Wheel/master/Steering%20Wheel%20Photos/1%20assambled%202020-04-09%2008.11.24.jpg)
 [check out more photos here](https://github.com/lshachar/Arduino_Fanatec_Wheel/tree/master/Steering%20Wheel%20Photos)
@@ -34,7 +40,7 @@ Also, [Alevale found where to buy the connector](https://github.com/darknao/btCl
 ### Several options:
 - Use a 5V arduino with a logic level shifter. (recommended, this is what I use. [(here are The schematics)](https://github.com/lshachar/Arduino_Fanatec_Wheel/blob/master/schamtics%20arduino%20nano-level%20shifter-fanatec%20round%20plug.png)
 - Use a 5V arduino **without** a logic shifter (can be risky to your precious wheelbase)
-- Use a 3.3V arduino (I haven't tried it. They run on 8 MHZ instead of 16 MHZ for the 5V arduinos, but I'm pretty sure 8MHZ should be fast enough.)
+- Use a 3.3V arduino (You will need an Arduino Pro Mini V2 which runs 3.3V at 16 MHz, as 8 MHz is not fast enough. For a more detailed guide [please read this](Pro%20Mini%20V2%203.3V/README.md))
 
 Code was tested on arduino Uno and Nano, and works fine. However, they both output 5V and the SPI communication on the wheelbase
 is using 3.3V.
